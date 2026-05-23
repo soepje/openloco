@@ -35,11 +35,6 @@ static int SDLCALL EventLoop(void* data) {
 }
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
-    if (argc != 2) {
-        SDL_Log("Usage: openloco [lego loco installation directory]");
-        return SDL_APP_FAILURE;
-    }
-
     int16_t tiles_x = 64;
     int16_t tiles_y = 48;
 
@@ -60,9 +55,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
 
     SDL_SetRenderLogicalPresentation(renderer, width, height, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
-    std::string installation_dir(argv[1]);
-
-    ResourceManager::GetInstance()->Load(installation_dir + "/art-res/resource.");
+    ResourceManager::GetInstance()->Load("./art-res/resource.");
 
     BACKDROP = ASSET_MANAGER.GetAsset(1024);
     BACKDROP->LoadBitmap(0, 0);
@@ -71,7 +64,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     WORLD.tiles_y = tiles_y;
 
     Savegame s;
-    LoadSavegame(installation_dir + "/art-res/SAVEGAME/COW-VILL.SAV", true, true);
+    LoadSavegame("./art-res/SAVEGAME/COW-VILL.SAV", true, true);
 
     SDL_CreateThread(EventLoop, "event_loop", nullptr);
 

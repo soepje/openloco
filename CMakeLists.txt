@@ -3,20 +3,17 @@ project(openloco)
 
 set(CMAKE_CXX_STANDARD 20)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+add_subdirectory(SDL EXCLUDE_FROM_ALL)
 
-find_package(SDL3)
+file(GLOB_RECURSE CPP_HEADERS src/*.hpp)
+file(GLOB_RECURSE CPP_SOURCES src/*.cpp)
 
-include(SourceList)
+add_executable(openloco ${CPP_HEADERS} ${CPP_SOURCES})
 
-add_library(openloco_lib OBJECT)
+target_link_libraries(openloco PRIVATE SDL3::SDL3)
+target_compile_definitions(openloco PRIVATE SDL_MAIN_USE_CALLBACKS=1)
 
-target_link_libraries(openloco_lib PRIVATE SDL3::SDL3)
-
-add_executable(openloco)
-
-target_link_libraries(openloco PRIVATE openloco_lib)
-
-target_compile_definitions(openloco_lib PRIVATE SDL_MAIN_USE_CALLBACKS=1)
-
-add_subdirectory(src)
+if(EMSCRIPTEN)
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --embed-file ${PROJECT_SOURCE_DIR}/art-res@/art-res")
+endif()
