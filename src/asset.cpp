@@ -62,7 +62,11 @@ void BaseAsset::Load(uint32_t id_, const std::string& name_) {
     id = id_;
     type = GetType(id_);
 
+    number_of_frame_sets = 0;
     total_number_of_frames = 1;
+
+
+    // TODO fix these, causes a lot of bugs
 
     // *(undefined4 *)((int)this + 0xc) = 0;
     // *(undefined4 *)((int)this + 0x38) = 0;
@@ -104,7 +108,8 @@ void BaseAsset::Load(uint32_t id_, const std::string& name_) {
 
 bool BaseAsset::Parse(std::istream &is) {
     bool ok = true;
-    std::string word;
+    // char buf[260];
+    std::string word; // TODO replace with buf, more true to original code
     is >> word;
     while (word != "-9" && is.good()) {
         if (Compare(word, "button")) {
@@ -186,6 +191,31 @@ bool BaseAsset::Parse(std::istream &is) {
         }
         is >> word;
     }
+
+    // TODO fix
+    // if (!Compare(word, "-9")) {
+    //     ok = false;
+    // }
+
+    std::getline(is, word);
+    while (word[0] != '/' && is.good()) {
+        std::getline(is, word);
+    }
+
+    std::getline(is, word);
+    while(word[0] == '/' && is.good()) {
+        std::getline(is, word);
+    }
+
+    // is.getline(buf, 260);
+    // while (buf[0] != '/' && is.good()) {
+    //     is.getline(buf, 260);
+    // }
+
+    // is.getline(buf, 260);
+    // while(buf[0] == '/' && is.good()) {
+    //     is.getline(buf, 260);
+    // }
 
     auto button_bitmap_name = std::string(image_name).replace(image_name.length() - 3, 3, "but");
     button_bitmap = new Bitmap();
@@ -417,8 +447,27 @@ bool TileAsset::ParseSequence(std::istream &is, Sequence& sequence) {
     return true;
 }
 
-TrackAsset::TrackAsset(uint32_t id, const std::string& name) : TileAsset(id, name) {
+TrackAsset::TrackAsset(uint32_t id, const std::string& name_) : TileAsset(id, "") {
+    if (!name_.empty()) {
+        std::string dat_name = name_ + ".dat";
+        image_name = name_ + ".bmp";
 
+        size_t resource_size = 0;
+        char* resource = ResourceManager::GetInstance()->Get(dat_name, resource_size);
+        std::istringstream is(std::string(resource, resource_size));
+
+        if (TileAsset::Parse(is)) {
+            if (BaseAsset::Parse(is)) {
+                success = TrackAsset::Parse(is);
+            } else {
+                success = false;
+            }
+        } else {
+            success = false;
+        }
+
+        delete resource;
+    }
 }
 
 bool TrackAsset::IsDepot() {
@@ -431,6 +480,16 @@ bool TrackAsset::IsTunnel() {
 
 bool TrackAsset::IsStation() {
     return track_type == STATION_H || track_type == STATION_V;
+}
+
+bool TrackAsset::IsNextTrack(int16_t point) {
+    if (point != 0) {
+        if (point != num_points && (num_points_alt != 0 || (point != num_points + 1 && point != num_points_alt))) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 
@@ -446,11 +505,11 @@ bool TrackAsset::Parse(std::istream &is) {
     int16_t points_len_tmp, points_alt_len_tmp;
     is >> points_len_tmp >> points_alt_len_tmp;
 
-    points_x = points_len_tmp - 1;
+    num_points = points_len_tmp - 1;
     if (points_alt_len_tmp == 0) {
-        points_y = 0;
+        num_points_alt = 0;
     } else {
-        points_y = points_alt_len_tmp + points_len_tmp - 1;
+        num_points_alt = points_alt_len_tmp + points_len_tmp - 1;
     }
 
     if (points_len_tmp > 0 || points_alt_len_tmp > 0) {
@@ -552,11 +611,13 @@ bool TrainAsset::Parse(std::istream &is) {
     if (is.good()) {
         std::string word;
         is >> word; // skip "speed"
-        is >> speed;
-        is >> speed_reverse;
+        is >> speed_slow;
+        is >> speed_fast;
     }
 
     ParseTrainData();
+
+    return true; // TODO
 }
 
 bool TrainAsset::ParseTrainData() {

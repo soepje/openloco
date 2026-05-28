@@ -7,6 +7,7 @@
 #include "globals.h"
 #include "util.h"
 #include "savegame.h"
+#include "depot.h"
 
 void Savegame::Open(const std::string& path) {
     Close();
@@ -65,7 +66,10 @@ SavegameTrain* Savegame::ReadTrain() {
     if (is->gcount() != 0x2c) {
         return nullptr;
     }
-    // TODO copy fields
+    for (size_t i = 0; i < 4; i++) {
+        train.segment_resource_ids[i] = uint32le(buf + i*4);
+    }
+    train.name = std::string(buf + 0x10);
     return &train;
 }
 
@@ -94,14 +98,27 @@ bool LoadSavegame(const std::string &path, bool unk1, bool unk2) {
 
     for (size_t i = 0; i < savegame.header.building_count; i++) {
         SavegameBuilding* building = savegame.ReadBuilding();
-        if (!building) {
-            continue;
+        if (building) {
+            Entity* builing = WORLD.AddTile(building->resource_id, building->tile_x + offset_x, building->tile_y + offset_y, true, 1);
         }
-
-        Entity* builing = WORLD.AddTile(building->resource_id, building->tile_x + offset_x, building->tile_y + offset_y, true, 1);
-
-
     }
+
+    for (size_t i = 0; i < savegame.header.train_count; i++) {
+        SavegameTrain* savegame_train = savegame.ReadTrain();
+        if (savegame_train) {
+            Depot* depot = (Depot*) BUILDING_MANAGER.GetRandomBuilding(3);
+            if (depot) {
+                Train* train = TRAIN_MANAGER.AddTrain(depot, savegame_train);
+                if (train) {
+                    train->SetVisible(false);
+                    train->cars[0]->SetName(std::string(savegame_train->name));
+                }
+            }
+
+        }
+    }
+
+    // TODO
 
     return true;
 }

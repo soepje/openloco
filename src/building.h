@@ -2,6 +2,7 @@
 #define OPENLOCO_BUILDING_H
 
 #include "entity.h"
+#include <cstdint>
 
 // size: 0x10c
 class Building : public ImageEntity {
@@ -36,40 +37,6 @@ public:
 
     bool GetRoamingDestination(Rect& dest);
     Point* GetEntryExit(Point* point, uint32_t direction);
-};
-
-class TrackEntity : public Building {
-public:
-    explicit TrackEntity(uint32_t resource_id) : Building(resource_id) {};
-
-    // TODO
-};
-
-class TunnelEntity : public TrackEntity {
-public:
-    explicit TunnelEntity(uint32_t resource_id) : TrackEntity(resource_id) {};
-
-    // TODO
-};
-
-class DepotEntity : public TrackEntity {
-public:
-    explicit DepotEntity(uint32_t resource_id) : TrackEntity(resource_id) {};
-
-    // TODO
-};
-
-class BuildingManager {
-public:
-
-    std::vector<Building*> tiles; // 4
-    int32_t tile_count = 0; // 14
-    int32_t leisure_destinations = 0; // 18
-
-    void Update();
-    Entity *CreateBuilding(uint32_t resource_id);
-    void RemoveTile(Entity* entity, bool trigger_explosion_effect);
-    Building* GetRandomBuilding(int32_t type);
 };
 
 #endif //OPENLOCO_BUILDING_H

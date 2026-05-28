@@ -33,14 +33,14 @@ public:
     Rect asset_mask = {}; // 30 asset clip region
     BaseAsset* asset = nullptr; // 40
 
-    void* field_44 = nullptr; // 44
+    void* field_44 = nullptr; // 44 sound ???
     void* field_48 = nullptr; // 48
 
     Point hotspot = {}; // 4c
 
     uint32_t current_frame = 0; // 54
     uint32_t restart_timestamp = 0; // 58
-    int32_t field_5c = 0; // 5c
+    int32_t field_5c = 0; // 5c sound id ???
     uint32_t field_60 = 0; // 60
 
     uint32_t resource_id = 0; // 64

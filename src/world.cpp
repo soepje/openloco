@@ -14,6 +14,15 @@ Entity *World::GetTile(int16_t x, int16_t y, int16_t z) {
     return nullptr;
 }
 
+std::tuple<int16_t, int16_t> World::GetTilePosition(int16_t x, int16_t y, int16_t z) {
+    if (x >= 0 && x < 81 && y >= 0 && y < 65) {
+        Building* building = dynamic_cast<Building*>(grid[x][y].physical_occupancy[z]);
+        return {building->tile_x, building->tile_y};
+    }
+    return {-1, -1};
+}
+
+
 Entity *World::GetNeighborTile(Entity* entity, uint32_t direction) {
     Building* tile_entity = dynamic_cast<Building *>(entity);
     TileAsset* tile_asset = dynamic_cast<TileAsset *>(tile_entity->asset);

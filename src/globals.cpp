@@ -5,7 +5,7 @@
 #include "world.h"
 
 AssetManager ASSET_MANAGER;
-
+TrainManager TRAIN_MANAGER;
 CursorEntity CURSOR_ENTITY;
 MinifigManager MINIFIG_MANAGER;
 BuildingManager BUILDING_MANAGER;

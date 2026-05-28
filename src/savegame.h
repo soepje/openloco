@@ -23,6 +23,7 @@ struct SavegameBuilding {
 
 struct SavegameTrain {
     uint32_t segment_resource_ids[4]; // 0
+    std::string name; // 10
 };
 
 class Savegame {

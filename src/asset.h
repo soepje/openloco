@@ -147,7 +147,7 @@ public:
     static bool ParseSequence(std::istream&, Sequence&);
 };
 
-enum TrackType {
+enum TrackAssetType {
     TUNNEL_LEFT = 1,
     TUNNEL_RIGHT = 2,
     TUNNEL_TOP = 3,
@@ -174,9 +174,9 @@ class TrackAsset : public TileAsset {
 public:
     int16_t* points = nullptr; // 630
     // 634 is still a mystery
-    int16_t points_x = 0; // 636
-    int16_t points_y = 0; // 638
-    TrackType track_type; // 63a
+    int16_t num_points = 0; // 636
+    int16_t num_points_alt = 0; // 638
+    TrackAssetType track_type; // 63a
 
     TrackAsset(uint32_t id, const std::string& name);
 
@@ -184,6 +184,7 @@ public:
     bool IsTunnel();
     bool IsDepot();
     bool IsStation();
+    bool IsNextTrack(int16_t point);
 };
 
 // size: 7ac
@@ -191,8 +192,8 @@ class TrainAsset : public BaseAsset {
 public:
     // TODO maybe two separate int16_t[200][2] arrays is more appropriate
     int16_t train_data[2][200][2] = {}; // 168
-    int16_t speed = 0; // 7a8
-    int16_t speed_reverse = 0; // 7aa
+    int16_t speed_slow = 0; // 7a8
+    int16_t speed_fast = 0; // 7aa
 
     TrainAsset(uint32_t id, const std::string& name);
 

@@ -8,7 +8,9 @@
 #include "world.h"
 #include "event.h"
 #include "minifig.h"
-
+#include "train.h"
+#include "train_manager.h"
+#include "building_manager.h"
 
 // DAT_0047e000 contains a list of globals to intialize
 
@@ -27,7 +29,7 @@
 // LAB_0045c770 DAT_004a9ad0
 
 extern AssetManager ASSET_MANAGER;
-
+extern TrainManager TRAIN_MANAGER;
 extern CursorEntity CURSOR_ENTITY;
 extern MinifigManager MINIFIG_MANAGER;
 extern BuildingManager BUILDING_MANAGER;
