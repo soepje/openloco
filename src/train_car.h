@@ -32,11 +32,12 @@ public:
 
     bool UpdateDepotEnterVisibility(Train* train);
     bool UpdateDepotExitVisibility(Train* train);
-
+    bool UpdateTunnelEnter(Train *train);
+    bool UpdateTunnelExit(Train *train);
+    void UpdateDepot(Train* train);
     void Update(Train* train);
     void UpdatePosition();
     void UpdateRotation();
-
     bool MoveBridge(Train* train);
 };
 

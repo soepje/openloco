@@ -9,6 +9,7 @@
 #include "track.h"
 #include "train_bogie.h"
 #include "train.h"
+#include "tunnel.h"
 
 TrainCar::TrainCar(uint32_t resource_id_, uint32_t train_type_, bool tunnel) : ImageEntity(resource_id_, -1, 0, 0) {
     bogie_front = nullptr;
@@ -69,6 +70,7 @@ bool TrainCar::SetAsset(uint32_t resource_id_, int32_t frame_set) {
 
 void TrainCar::Update(Train* train) {
     TrainBogie* forward_bogie  = (train->direction == 0) ? bogie_front : bogie_back;
+    Track* old_track = forward_bogie->track;
 
     bool moved = false;
 
@@ -100,15 +102,72 @@ void TrainCar::Update(Train* train) {
         }
 
         if (train->tunnel_state != 0) {
-            // TODO
+            if (tunnel_state == 0) {
+                if (train->tunnel_state == 4) {
+                    UpdateTunnelExit(train);
+                }
+            } else if (tunnel_state == 1) {
+                if (train->direction == 0 && bogie_back->tunnel_state == 2) {
+                    UpdateTunnelEnter(train);
+                } else if (train->direction == 1 && bogie_front->tunnel_state == 2) {
+                    UpdateTunnelEnter(train);
+                }
+            } else if (tunnel_state == 4) {
+                UpdateTunnelExit(train);
+            }
         }
 
         if (train->depot_state != 0) {
-            // TODO
+            UpdateDepot(train);
         }
     }
 
+    if (old_track) {
+        TrackAsset* track_asset = dynamic_cast<TrackAsset*>(old_track->asset);
+        if (track_asset && track_asset->IsTunnel()) {
+            Track* another_track = train->direction == 0 ? train->cars[train->last_car]->bogie_back->track : train->cars[0]->bogie_front->track;
+            TrackAsset* another_track_asset = dynamic_cast<TrackAsset*>(another_track->asset);
+           if (another_track_asset && !another_track_asset->IsTunnel()) {
+               Tunnel* tunnel = dynamic_cast<Tunnel*>(old_track);
+               if (tunnel->field_11c == 1) {
+                   tunnel->field_11c = 0;
+               }
+           }
+        }
+    }
+}
+
+bool TrainCar::UpdateTunnelEnter(Train *train) {
     // TODO
+    return false;
+}
+
+bool TrainCar::UpdateTunnelExit(Train *train) {
+    // TODO
+    return false;
+}
+
+void TrainCar::UpdateDepot(Train* train) {
+    if (train->depot_state != 0) {
+        if (train->depot_state == 1) {
+            if (train->direction == 0 && bogie_back->depot_state == 1) {
+                UpdateDepotEnterVisibility(train);
+                return;
+            }
+            if (train->direction == 1 && bogie_front->depot_state == 1) {
+                UpdateDepotEnterVisibility(train);
+                return;
+            }
+        } else {
+            if (depot_state == 5) {
+                UpdateDepotExitVisibility(train);
+                return;
+            }
+            if (depot_state == 4 && bogie_front->depot_state == 0 && bogie_back->depot_state == 1) {
+                depot_state = 0;
+            }
+        }
+    }
 }
 
 void TrainCar::UpdatePosition() {

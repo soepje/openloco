@@ -3,6 +3,7 @@
 #include "train.h"
 #include "asset.h"
 #include "building.h"
+#include "track.h"
 #include "train_bogie.h"
 
 Train::Train(uint32_t engine_resource_id, uint32_t unk1, bool unk2, bool unk3) {
@@ -32,9 +33,9 @@ Train::Train(uint32_t engine_resource_id, uint32_t unk1, bool unk2, bool unk3) {
         field_38[i] = 0;
     }
 
-    field_20 = new TrainBogie(unk2);
+    forward_bogie = new TrainBogie(unk2);
 
-    field_28 = 0;
+    crash_timer = 0;
     last_car = 0;
 
     cars[0] = new TrainCar(engine_resource_id, 2, unk2);
@@ -51,14 +52,91 @@ Train::Train(uint32_t engine_resource_id, uint32_t unk1, bool unk2, bool unk3) {
 
             // point = 0;
 
-            Unk2(0);
+            SetState(TrainState::UNKNOWN_1);
 
-            field_36 = 0;
+            station_timer = 0;
 
             // TODO
         } else {
             delete segment;
             cars[last_car] = nullptr;
+        }
+    }
+}
+
+void Train::Update() {
+    if (field_90) {
+        field_90 = false;
+        if (!field_5a) {
+            field_5a = true;
+            ReverseDirection();
+            field_5a = false;
+        }
+    }
+
+    if (station_timer != 0) {
+        station_timer--;
+        if (station_timer == 1 && train_state == TrainState::STOPPED) {
+            SetState(TrainState::DRIVE);
+        }
+    }
+
+    if (train_state == TrainState::UNKNOWN_1 || train_state == TrainState::CRASHED || tunnel_state == 2 || tunnel_state == 3 || depot_state == 2 || speed == 0 || station_timer > 0 || (train_state != TrainState::DRIVE && train_state != TrainState::STOPPED)) {
+
+    } else {
+        bool go = false;
+        Track* track = forward_bogie->track;
+        if (track) {
+            switch (track->track_state) {
+            case TrackState::SWITCH_GO:
+                SetState(TrainState::DRIVE);
+                go = true;
+                break;
+            case TrackState::SWITCH_REVERSE:
+                if (!field_5a) {
+                    field_5a = true;
+                    ReverseDirection();
+                    field_5a = false;
+                }
+                SetState(TrainState::DRIVE);
+                go = true;
+                break;
+            case TrackState::SWITCH_STOP:
+                if (train_state != TrainState::STOPPED) {
+                    SetState(TrainState::STOPPED);
+                }
+                break;
+            default:
+                go = true;
+                break;
+            }
+        }
+
+        if (go) {
+            for (size_t i = 0; i < speed; i++) {
+
+
+                // this_00 = this->train_thingy;
+                // if ((this_00->tunnel_state == 2) || (this_00->depot_state == 2)) {
+                //   local_c = 1;
+                // }
+                // else {
+                //   bVar5 = TrainBogie_Unk2(this_00,this);
+                //   if (!bVar5) break;
+                //   local_c = local_c + 1;
+                //   iVar10 = this->train_thingy->tunnel_state;
+                //   if ((iVar10 == 2) || (iVar10 == 3)) {
+                //     local_c = 1;
+                //   } else if ((this->depot_state != 2) && (this->train_thingy->depot_state == 2)) {
+                //     this->depot_state = 1;
+                //     Train_SetVisible(this,true);
+                //     local_c = 1;
+                //   }
+                // }
+
+            }
+
+            // TOOD
         }
     }
 }
@@ -76,8 +154,8 @@ void Train::SetVisible(bool param) {
     // TODO
 }
 
-void Train::Unk2(int32_t param_1) {
-    if (field_5c == param_1) {
+void Train::SetState(TrainState state) {
+    if (train_state == state) {
         return;
     }
 
@@ -85,14 +163,14 @@ void Train::Unk2(int32_t param_1) {
         return;
     }
 
-    field_5c = param_1;
+    train_state = state;
 
-    if (param_1 == 0) {
-        field_28 = 0;
-        field_36 = 0;
-    } else if (param_1 != 1) {
+    if (state == TrainState::UNKNOWN_1) {
+        crash_timer = 0;
+        station_timer = 0;
+    } else if (state != TrainState::STOPPED) {
 
-    } else if (param_1 != 4) {
+    } else if (state != TrainState::CRASHED) {
         if (field_68 != 0) {
             return;
         }
@@ -102,7 +180,7 @@ void Train::Unk2(int32_t param_1) {
 
         // TODO
     } else {
-        field_36 = 0;
+        station_timer = 0;
     }
 
     for (size_t i = 0; i < last_car + 1; i++) {
@@ -111,7 +189,7 @@ void Train::Unk2(int32_t param_1) {
 }
 
 bool Train::IsPlainTrack() {
-    if (field_5c == 4 || field_5a) {
+    if (train_state == TrainState::CRASHED || field_5a) {
         return false;
     }
 
@@ -122,8 +200,8 @@ bool Train::IsPlainTrack() {
         bogey = cars[0]->bogie_front;
     }
 
-    if (field_20->track) {
-        auto track_asset = dynamic_cast<TrackAsset*>(field_20->track->asset);
+    if (forward_bogie->track) {
+        auto track_asset = dynamic_cast<TrackAsset*>(forward_bogie->track->asset);
         if (!track_asset->IsTunnel() && !track_asset->IsDepot()) {
             return true;
         }

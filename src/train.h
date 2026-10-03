@@ -9,21 +9,28 @@
 #include "train_bogie.h"
 #include "train_car.h"
 
+enum class TrainState {
+    UNKNOWN_1 = 0,
+    STOPPED = 1,
+    DRIVE = 2,
+    UNKNOWN_2 = 3,
+    CRASHED = 4,
+};
+
 // Size: 0x94
 class Train {
 public:
     uint32_t field_4; // 4
     int32_t direction; // 8
-    uint16_t last_car; // c
+    int16_t last_car; // c
     TrainCar* cars[4]; // 10
 
-    TrainBogie* field_20; // 20
+    TrainBogie* forward_bogie; // 20
 
     int16_t speed_slow; // 24
     int16_t speed_fast; // 26
 
-    // waiting time after crash?
-    int32_t field_28; // 28
+    int32_t crash_timer; // 28
     bool on_bridge; // 2c
 
     // some tile_x and tile_y of ???
@@ -35,7 +42,7 @@ public:
     int16_t field_34; // 34
 
     // this is probably waiting time left at station
-    int16_t field_36; // 36
+    int16_t station_timer; // 36
 
     // Not sure about type
     uint8_t field_38[8]; // 38
@@ -45,8 +52,7 @@ public:
     bool field_5a; // 5a
 
     // some state (0 = normal, 1 = waiting, 2 = ?, 3 = ?, 4 = crashed)
-    int32_t field_5c; // 5c
-
+    TrainState train_state; // 5c
     uint32_t tunnel_state; // 60
     uint32_t depot_state; // 64
 
@@ -67,10 +73,11 @@ public:
 
     Train(uint32_t engine_resource_id, uint32_t unk1, bool unk2, bool unk3);
 
+    bool ReverseDirection() { /* TODO */ return false; }
     void SetVisible(bool param);
-    void Unk2(int32_t param_1);
+    void SetState(TrainState state);
     Track* GetTrack();
-
+    void Update();
     bool HasPassengerCar();
     bool IsPlainTrack();
     bool IsOnBridge();

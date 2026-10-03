@@ -86,15 +86,15 @@ bool TrainBogie::CheckStation(Train* train) {
     TrackAsset* track_asset = dynamic_cast<TrackAsset*>(track->asset);
     TrackAssetType track_type = track_asset->track_type;
     if (track_type == STATION_H || track_type == STATION_V) {
-        if (train->field_36 == 1) {
-            train->field_36 = 0;
+        if (train->station_timer == 1) {
+            train->station_timer = 0;
             return false;
         }
 
         if (train->HasPassengerCar()) {
             if ((direction == 0 && point == 1) || (direction == 1 && point == (track_asset->num_points - 1))) {
-                train->field_36 = 200;
-                train->Unk2(1);
+                train->station_timer = 200;
+                train->SetState(TrainState::STOPPED);
                 return true;
             }
         }
@@ -136,7 +136,7 @@ bool TrainBogie::SetTrack(int32_t x, int32_t y) {
 
 bool TrainBogie::UpdateTrackConfig(Train* train, Track* track) {
     if (track->num_trains > 0) {
-        train->Unk2(1);
+        train->SetState(TrainState::STOPPED);
     }
 
     TrackAsset* track_asset = dynamic_cast<TrackAsset*>(track->asset);
@@ -414,7 +414,7 @@ bool TrainBogie::Unk2(Train* train) {
             somevar = true;
             track_asset = dynamic_cast<TrackAsset*>(track->asset);
             if (track_asset->IsTunnel()) {
-                auto track2 = dynamic_cast<Tunnel*>(train->field_20->track);
+                auto track2 = dynamic_cast<Tunnel*>(train->forward_bogie->track);
                 if (track2->field_11c == 1 && train->tunnel_state != 1) {
                     if(train->IsPlainTrack()) {
                         // TODO
@@ -713,7 +713,7 @@ bool TrainBogie::Move(Train* train, TrainCar* train_segment) {
             }
 
             if (tunnel_state != 2 && tunnel_state != 3) {
-                train->Unk2(1);
+                train->SetState(TrainState::STOPPED);
             } else {
                 switch (dynamic_cast<TrackAsset*>(track->asset)->track_type) {
                 case TUNNEL_LEFT:
@@ -739,7 +739,7 @@ bool TrainBogie::Move(Train* train, TrainCar* train_segment) {
         }
     }
 
-    if (train->field_5c == 2 && track != nullptr && tunnel_state == 0 && depot_state == 0) {
+    if (train->train_state == TrainState::DRIVE && track != nullptr && tunnel_state == 0 && depot_state == 0) {
         if (direction == 1) {
             point++;
         } else {
