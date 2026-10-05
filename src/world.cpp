@@ -17,7 +17,7 @@ Entity *World::GetTile(int16_t x, int16_t y, int16_t z) {
 std::tuple<int16_t, int16_t> World::GetTilePosition(int16_t x, int16_t y, int16_t z) {
     if (x >= 0 && x < 81 && y >= 0 && y < 65) {
         Building* building = dynamic_cast<Building*>(grid[x][y].physical_occupancy[z]);
-        return {building->tile_x, building->tile_y};
+        return {building->tile.x, building->tile.y};
     }
     return {-1, -1};
 }
@@ -128,8 +128,8 @@ Entity* World::AddTile(uint32_t resource_id, int16_t x, int16_t y, bool no_offse
         }
     }
 
-    tile->tile_x = x;
-    tile->tile_y = y;
+    tile->tile.x = x;
+    tile->tile.y = y;
     tile->SetViewPosition(x*16, y*16);
 
     return tile;

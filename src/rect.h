@@ -19,6 +19,10 @@ struct Point {
     }
 };
 
+struct Points {
+    int16_t x, y;
+};
+
 bool IsRectEmpty(const Rect& rect);
 
 void SetRect(Rect& rect, int32_t left, int32_t top, int32_t right, int32_t bottom);

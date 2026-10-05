@@ -31,22 +31,22 @@ void TrainBogie::CheckDepot() {
         TrackAsset* track_asset = dynamic_cast<TrackAsset*>(track->asset);
         switch (track_asset->track_type) {
             case DEPOT_LEFT:
-                if (x < ((track_asset->bitmap_occupancy_x + track->tile_x) * 16 - 16)) {
+                if (x < ((track_asset->bitmap_occupancy_x + track->tile.x) * 16 - 16)) {
                     depot_state = 2;
                 }
                 break;
             case DEPOT_RIGHT:
-                if ((track->tile_x + 1) * 16 < x) {
+                if ((track->tile.x + 1) * 16 < x) {
                     depot_state = 2;
                 }
                 break;
             case DEPOT_TOP:
-                if (y < ((track_asset->bitmap_occupancy_y + track->tile_y) * 16 - 16)) {
+                if (y < ((track_asset->bitmap_occupancy_y + track->tile.y) * 16 - 16)) {
                     depot_state = 2;
                 }
                 break;
             case DEPOT_BOTTOM:
-                if ((track->tile_y + 1) * 16 < y) {
+                if ((track->tile.y + 1) * 16 < y) {
                     depot_state = 2;
                 }
                 break;
@@ -122,14 +122,14 @@ bool TrainBogie::SetTrack(int32_t x, int32_t y) {
     // TODO weird stuff (is this even necessary???)
 
     for (size_t i = 0; i < track_asset->num_points; i++) {
-        if ((x - building->tile_x*16) == track_asset->points[i*2]) {
+        if ((x - building->tile.x*16) == track_asset->points[i*2]) {
             point = i;
             break;
         }
     }
 
-    x = track_asset->points[point * 2] + building->tile_x * 16;
-    y = track_asset->points[point * 2 + 1] + building->tile_y * 16;
+    x = track_asset->points[point * 2] + building->tile.x * 16;
+    y = track_asset->points[point * 2 + 1] + building->tile.y * 16;
 
     return true;
 }
@@ -175,8 +175,8 @@ bool TrainBogie::UpdateTrackConfig(Train* train, Track* track) {
 Track* TrainBogie::UpdateTrack() {
     TrackAsset* track_asset = dynamic_cast<TrackAsset*>(track->asset);
 
-    int16_t next_x = track->tile_x * 16 + track_asset->points[point*2];
-    int16_t next_y = track->tile_y * 16 + track_asset->points[point*2 + 1];
+    int16_t next_x = track->tile.x * 16 + track_asset->points[point*2];
+    int16_t next_y = track->tile.y * 16 + track_asset->points[point*2 + 1];
 
     if (next_x < 0) {
         return track;
@@ -193,8 +193,8 @@ Track* TrainBogie::UpdateTrack() {
 
     if (next_track) {
         if (next_track->track_state != TrackState::CONFIG_A || next_track_asset->track_type == CROSSTRACK) {
-            if (next_x == next_track_asset->points[2] + next_track->tile_x*16 &&
-                next_y == next_track_asset->points[3] + next_track->tile_y*16) {
+            if (next_x == next_track_asset->points[2] + next_track->tile.x*16 &&
+                next_y == next_track_asset->points[3] + next_track->tile.y*16) {
                 track->num_trains--;
                 track = next_track;
                 direction = 1;
@@ -203,8 +203,8 @@ Track* TrainBogie::UpdateTrack() {
                 return nullptr;
             }
 
-            if (next_x == next_track_asset->points[next_track_asset->num_points*2-2] + next_track->tile_x*16 &&
-                next_y == next_track_asset->points[next_track_asset->num_points*2-1] + next_track->tile_y*16) {
+            if (next_x == next_track_asset->points[next_track_asset->num_points*2-2] + next_track->tile.x*16 &&
+                next_y == next_track_asset->points[next_track_asset->num_points*2-1] + next_track->tile.y*16) {
                 if (next_track_asset->track_type == POINTS && next_track->track_state == TrackState::CONFIG_A) {
                     if (next_track_asset->points[0] != next_track_asset->points[next_track_asset->num_points_alt * 2 + 2] ||
                         next_track_asset->points[1] != next_track_asset->points[next_track_asset->num_points_alt * 2 + 3]) {
@@ -220,8 +220,8 @@ Track* TrainBogie::UpdateTrack() {
             }
         }
         if (next_track_asset->num_points_alt != 0 &&
-            next_x == next_track_asset->points[4 + next_track_asset->num_points * 2] + next_track->tile_x*16 &&
-            next_y == next_track_asset->points[5 + next_track_asset->num_points * 2] + next_track->tile_y*16) {
+            next_x == next_track_asset->points[4 + next_track_asset->num_points * 2] + next_track->tile.x*16 &&
+            next_y == next_track_asset->points[5 + next_track_asset->num_points * 2] + next_track->tile.y*16) {
             if (next_track_asset->track_type == POINTS && next_track->track_state == TrackState::CONFIG_B) {
                 if (next_track_asset->points[0] != next_track_asset->points[next_track_asset->num_points_alt * 2 + 2] ||
                     next_track_asset->points[1] != next_track_asset->points[next_track_asset->num_points_alt * 2 + 3]) {
@@ -236,8 +236,8 @@ Track* TrainBogie::UpdateTrack() {
             return nullptr;
         }
         if (next_track_asset->num_points_alt == 0 ||
-            next_x != next_track_asset->points[next_track_asset->num_points_alt*2-2] + next_track->tile_x*16 ||
-            next_y != next_track_asset->points[next_track_asset->num_points_alt*2-1] + next_track->tile_y*16) {
+            next_x != next_track_asset->points[next_track_asset->num_points_alt*2-2] + next_track->tile.x*16 ||
+            next_y != next_track_asset->points[next_track_asset->num_points_alt*2-1] + next_track->tile.y*16) {
             return nullptr;
         }
         if (next_track_asset->track_type == POINTS && next_track->track_state == TrackState::CONFIG_B) {
@@ -264,32 +264,32 @@ bool TrainBogie::UpdatePoint(int32_t x, int32_t y) {
 
     TrackAsset* track_asset = dynamic_cast<TrackAsset*>(track->asset);
 
-    if (x == track->tile_x*16 + track_asset->points[0]) {
-        if (y != track->tile_y*16 + track_asset->points[1]) {
+    if (x == track->tile.x*16 + track_asset->points[0]) {
+        if (y != track->tile.y*16 + track_asset->points[1]) {
             if (track_asset->num_points != 0) {
                 int32_t i = 0;
-                while (y - track->tile_y*16 != track_asset->points[i*2+1]) {
+                while (y - track->tile.y*16 != track_asset->points[i*2+1]) {
                     i++;
                     if (i <= track_asset->num_points) {
                         return false;
                     }
                 }
                 point = i;
-                y = track_asset->points[i*2+1] + track->tile_y*16;
+                y = track_asset->points[i*2+1] + track->tile.y*16;
                 return true;
             }
         }
     } else {
         if (track_asset->num_points != 0) {
             int32_t i = 0;
-            while (x - track->tile_x*16 != track_asset->points[i*2]) {
+            while (x - track->tile.x*16 != track_asset->points[i*2]) {
                 i++;
                 if (i <= track_asset->num_points) {
                     return false;
                 }
             }
             point = i;
-            x = track_asset->points[i*2] + track->tile_x*16;
+            x = track_asset->points[i*2] + track->tile.x*16;
             return true;
         }
     }
@@ -302,28 +302,28 @@ bool TrainBogie::ExitDepot() {
     switch (track_asset->track_type) {
         case DEPOT_LEFT:
             x++;
-            if (x > (track->tile_x + track_asset->bitmap_occupancy_x - 1)*16) {
+            if (x > (track->tile.x + track_asset->bitmap_occupancy_x - 1)*16) {
                 UpdatePoint(x, y);
                 depot_state = 0;
             }
             break;
         case DEPOT_RIGHT:
             x--;
-            if (x < (track->tile_x + 1)*16) {
+            if (x < (track->tile.x + 1)*16) {
                 UpdatePoint(x, y);
                 depot_state = 0;
             }
             break;
         case DEPOT_TOP:
             y++;
-            if (y > (track->tile_y + track_asset->bitmap_occupancy_y - 2)*16) {
+            if (y > (track->tile.y + track_asset->bitmap_occupancy_y - 2)*16) {
                 UpdatePoint(x, y);
                 depot_state = 0;
             }
             break;
         case DEPOT_BOTTOM:
             y--;
-            if (y < (track->tile_y + 1)*16) {
+            if (y < (track->tile.y + 1)*16) {
                 UpdatePoint(x, y);
                 depot_state = 0;
             }
@@ -745,8 +745,8 @@ bool TrainBogie::Move(Train* train, TrainCar* train_segment) {
         } else {
             point--;
         }
-        x = track_asset->points[point*2] + track->tile_x*16;
-        y = track_asset->points[point*2+1] + track->tile_y*16;
+        x = track_asset->points[point*2] + track->tile.x*16;
+        y = track_asset->points[point*2+1] + track->tile.y*16;
         return true;
     }
 

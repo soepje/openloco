@@ -67,7 +67,7 @@ SavegameTrain* Savegame::ReadTrain() {
         return nullptr;
     }
     for (size_t i = 0; i < 4; i++) {
-        train.segment_resource_ids[i] = uint32le(buf + i*4);
+        train.resource_ids[i] = uint32le(buf + i*4);
     }
     train.name = std::string(buf + 0x10);
     return &train;

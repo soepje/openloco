@@ -11,13 +11,13 @@
 #include "train.h"
 #include "tunnel.h"
 
-TrainCar::TrainCar(uint32_t resource_id_, uint32_t train_type_, bool tunnel) : ImageEntity(resource_id_, -1, 0, 0) {
+TrainCar::TrainCar(uint32_t resource_id_, TrainCarType train_type_, bool tunnel) : ImageEntity(resource_id_, -1, 0, 0) {
     bogie_front = nullptr;
     bogie_back = nullptr;
     train = nullptr;
     resource_id = resource_id_;
     if (ok) {
-        train_type = train_type_;
+        train_car_type = train_type_;
         bogie_front = new TrainBogie(tunnel);
         bogie_back = new TrainBogie(tunnel);
         rotation = 0;
@@ -38,31 +38,31 @@ TrainCar::TrainCar(uint32_t resource_id_, uint32_t train_type_, bool tunnel) : I
     }
 }
 
-static int GetCarType(uint32_t resource_id) {
+TrainCarType TrainCar::GetTrainCarType(int32_t resource_id) {
     switch(resource_id) {
     case 0x1804:
     case 0x1806:
     case 0x1808:
-      return 1; // engine
+      return TrainCarType::ENGINE;
     case 0x1866:
     case 0x1868:
     case 0x186a:
-      return 2; // passenger car
+      return TrainCarType::PASSENGER;
     case 0x186c:
     case 0x186e:
-      return 3; // freight car
+      return TrainCarType::FREIGHT;
     case 0x1870:
     case 0x1871:
-      return 4; // mail car
+      return TrainCarType::MAIL;
     default:
-      return 0;
+      return TrainCarType::INVALID;
     }
 }
 
 bool TrainCar::SetAsset(uint32_t resource_id_, int32_t frame_set) {
     resource_id = resource_id_;
     if (ImageEntity::SetAsset(resource_id_, frame_set, false)) {
-        train_type = GetCarType(resource_id);
+        train_car_type = GetTrainCarType(resource_id);
         return true;
     }
     return false;
@@ -204,22 +204,22 @@ bool TrainCar::UpdateDepotEnterVisibility(Train* train) {
     if (forward_bogie->depot_state == 1) {
         switch (track_asset->track_type) {
         case DEPOT_LEFT:
-            if (view.right < (track->tile_x + track_asset->bitmap_occupancy_x - 1) * 16) {
+            if (view.right < (track->tile.x + track_asset->bitmap_occupancy_x - 1) * 16) {
                 depot_state = 2;
             }
             break;
         case DEPOT_RIGHT:
-            if (view.left > (track->tile_x + 1) * 16) {
+            if (view.left > (track->tile.x + 1) * 16) {
                 depot_state = 2;
             }
             break;
         case DEPOT_TOP:
-            if (view.bottom < (track->tile_x + track_asset->bitmap_occupancy_y - 2) * 16) {
+            if (view.bottom < (track->tile.x + track_asset->bitmap_occupancy_y - 2) * 16) {
                 depot_state = 2;
             }
             break;
         case DEPOT_BOTTOM:
-            if (view.top > (track->tile_y + 1) * 16) {
+            if (view.top > (track->tile.y + 1) * 16) {
                 depot_state = 2;
             }
             break;
@@ -242,25 +242,25 @@ bool TrainCar::UpdateDepotExitVisibility(Train* train) {
 
     switch (track_asset->track_type) {
     case DEPOT_LEFT:
-        if (view.right >= (track->tile_x + track_asset->bitmap_occupancy_x - 1) * 16) {
+        if (view.right >= (track->tile.x + track_asset->bitmap_occupancy_x - 1) * 16) {
             depot_state = 4;
             SetVisible(true);
         }
         break;
     case DEPOT_RIGHT:
-        if (view.left < (track->tile_x + 1) * 16) {
+        if (view.left < (track->tile.x + 1) * 16) {
             depot_state = 4;
             SetVisible(true);
         }
         break;
     case DEPOT_TOP:
-        if (view.bottom > (track->tile_y + track_asset->bitmap_occupancy_y - 2) * 16) {
+        if (view.bottom > (track->tile.y + track_asset->bitmap_occupancy_y - 2) * 16) {
             depot_state = 4;
             SetVisible(true);
         }
         break;
     case DEPOT_BOTTOM:
-        if (view.top < (track->tile_y + 1) * 16) {
+        if (view.top < (track->tile.y + 1) * 16) {
             depot_state = 4;
             SetVisible(true);
         }

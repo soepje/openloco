@@ -2,13 +2,13 @@
 #define OPENLOCO_BUILDING_H
 
 #include "entity.h"
+#include "rect.h"
 #include <cstdint>
 
 // size: 0x10c
 class Building : public ImageEntity {
 public:
-    int16_t tile_x = 0; // 88
-    int16_t tile_y = 0; // 8a
+    Points tile = {0, 0}; // 88
 
     uint8_t max_resident_count = 0; // 8c
     uint8_t resident_count = 0; // 8d

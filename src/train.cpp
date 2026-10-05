@@ -5,17 +5,16 @@
 #include "building.h"
 #include "track.h"
 #include "train_bogie.h"
+#include "train_car.h"
 
 Train::Train(uint32_t engine_resource_id, uint32_t unk1, bool unk2, bool unk3) {
-    field_2e = -1;
-    field_30 = -1;
-    field_32 = -1;
-    field_34 = -1;
+    track_tile = {-1, -1};
+    field_32 = {-1, -1};
 
     field_88 = unk3;
     field_4 = unk1;
 
-    field_5a = false;
+    reversing = false;
     field_90 = false;
     on_bridge = false;
 
@@ -38,7 +37,7 @@ Train::Train(uint32_t engine_resource_id, uint32_t unk1, bool unk2, bool unk3) {
     crash_timer = 0;
     last_car = 0;
 
-    cars[0] = new TrainCar(engine_resource_id, 2, unk2);
+    cars[0] = new TrainCar(engine_resource_id, TrainCarType::ENGINE, unk2);
 
     TrainCar* segment = cars[last_car];
     if (segment) {
@@ -67,10 +66,10 @@ Train::Train(uint32_t engine_resource_id, uint32_t unk1, bool unk2, bool unk3) {
 void Train::Update() {
     if (field_90) {
         field_90 = false;
-        if (!field_5a) {
-            field_5a = true;
+        if (!reversing) {
+            reversing = true;
             ReverseDirection();
-            field_5a = false;
+            reversing = false;
         }
     }
 
@@ -80,6 +79,8 @@ void Train::Update() {
             SetState(TrainState::DRIVE);
         }
     }
+
+    int local_c = 0;
 
     if (train_state == TrainState::UNKNOWN_1 || train_state == TrainState::CRASHED || tunnel_state == 2 || tunnel_state == 3 || depot_state == 2 || speed == 0 || station_timer > 0 || (train_state != TrainState::DRIVE && train_state != TrainState::STOPPED)) {
 
@@ -93,10 +94,10 @@ void Train::Update() {
                 go = true;
                 break;
             case TrackState::SWITCH_REVERSE:
-                if (!field_5a) {
-                    field_5a = true;
+                if (!reversing) {
+                    reversing = true;
                     ReverseDirection();
-                    field_5a = false;
+                    reversing = false;
                 }
                 SetState(TrainState::DRIVE);
                 go = true;
@@ -115,24 +116,24 @@ void Train::Update() {
         if (go) {
             for (size_t i = 0; i < speed; i++) {
 
+                // what is this about???
+                if (forward_bogie->tunnel_state == 2 || forward_bogie->depot_state == 2) {
+                    local_c = 1;
+                } else {
+                    if (!forward_bogie->Unk2(this)) {
+                        break;
+                    }
+                    local_c++;
+                    if (forward_bogie->tunnel_state == 2 || forward_bogie->tunnel_state == 3) {
+                        local_c = 1;
+                    } else if (depot_state != 2 && forward_bogie->depot_state == 2) {
+                        depot_state = 1;
+                        SetVisible(true);
+                        local_c = 1;
+                    }
+                }
 
-                // this_00 = this->train_thingy;
-                // if ((this_00->tunnel_state == 2) || (this_00->depot_state == 2)) {
-                //   local_c = 1;
-                // }
-                // else {
-                //   bVar5 = TrainBogie_Unk2(this_00,this);
-                //   if (!bVar5) break;
-                //   local_c = local_c + 1;
-                //   iVar10 = this->train_thingy->tunnel_state;
-                //   if ((iVar10 == 2) || (iVar10 == 3)) {
-                //     local_c = 1;
-                //   } else if ((this->depot_state != 2) && (this->train_thingy->depot_state == 2)) {
-                //     this->depot_state = 1;
-                //     Train_SetVisible(this,true);
-                //     local_c = 1;
-                //   }
-                // }
+
 
             }
 
@@ -143,7 +144,7 @@ void Train::Update() {
 
 bool Train::HasPassengerCar() {
     for (size_t i = 1; i < 4; i++) {
-        if (cars[i] != nullptr && cars[i]->train_type == 2) {
+        if (cars[i] != nullptr && cars[i]->train_car_type == TrainCarType::PASSENGER) {
             return true;
         }
     }
@@ -189,7 +190,7 @@ void Train::SetState(TrainState state) {
 }
 
 bool Train::IsPlainTrack() {
-    if (train_state == TrainState::CRASHED || field_5a) {
+    if (train_state == TrainState::CRASHED || reversing) {
         return false;
     }
 
@@ -241,4 +242,137 @@ bool Train::IsOnBridge() {
         }
     }
     return on_bridge;
+}
+
+bool Train::AddCar(int32_t resource_id, TrainCarType type, bool tunnel) {
+    if (last_car < 3 && !cars[last_car+1]) {
+        last_car++;
+        TrainCar* train_car = new TrainCar(resource_id, type, tunnel);
+        cars[last_car] = train_car;
+        if (train_car) {
+            if (train_car->ok) {
+                train_car->train = this;
+                return true;
+            }
+            delete train_car;
+            cars[last_car] = nullptr;
+        }
+        last_car--;
+    }
+    return false;
+}
+
+void Train::ExitDepot(Depot* depot, bool unk) {
+    track_tile = depot->tile;
+    if (depot->train && depot->train != this) {
+        depot->QueueTrain(this);
+        return;
+    }
+    depot->field_128 = true;
+    depot->train = this;
+    depot_state = 5;
+    SetVisible(true);
+    for (size_t i = 0; i <= last_car; i++) {
+        cars[last_car]->depot_state = 5;
+        cars[last_car]->bogie_front->depot_state = 5;
+        cars[last_car]->bogie_back->depot_state = 5;
+    }
+    SetState(TrainState::DRIVE);
+    SetVisible(true);
+    SetTrack(depot, unk);
+    depot->field_11c = 0;
+}
+
+// More like set spawn track, this code assumes track is a depot or tunnel
+bool Train::SetTrack(Track* track, bool unk) {
+    if (!track) {
+        return false;
+    }
+
+    int track_type = 0;
+    TrackAsset* track_asset = dynamic_cast<TrackAsset*>(track->asset);
+
+    if (track_asset->IsTunnel()) {
+        track_type = 2;
+        track_tile = track->tile;
+    } else if (track_asset->IsDepot()) {
+        track_type = 1;
+        track->SetSomething(1);
+    }
+
+    for (size_t i = 0; i <= last_car; i++) {
+        TrainCar* car = cars[i];
+        TrainBogie* bogie_front = car->bogie_front;
+        TrainBogie* bogie_back = car->bogie_back;
+
+        bogie_front->track = track;
+        bogie_back->track = track;
+
+        if (track_type == 2) {
+          car->tunnel_state = 4;
+          bogie_front->tunnel_state = 4;
+          bogie_back->tunnel_state = 4;
+        } else {
+          bogie_front->depot_state = 5;
+          bogie_back->depot_state = 5;
+        }
+
+        if (track_asset->track_type == TUNNEL_LEFT || track_asset->track_type == DEPOT_LEFT) {
+            if (!unk) {
+                car->rotation = direction == 0 ? 64 : 0;
+            }
+
+            bogie_front->direction = 0;
+            bogie_front->point = track_asset->num_points - 1;
+            bogie_back->direction = 0;
+            bogie_back->point = track_asset->num_points - 1;
+        } else if (track_asset->track_type == TUNNEL_RIGHT || track_asset->track_type == DEPOT_RIGHT) {
+            if (!unk) {
+                car->rotation = direction == 0 ? 0 : 64;
+            }
+
+            bogie_front->direction = 1;
+            bogie_front->point = 1;
+            bogie_back->direction = 1;
+            bogie_back->point = 1;
+        } else if (track_asset->track_type == TUNNEL_TOP || track_asset->track_type == DEPOT_TOP) {
+            if (!unk) {
+                car->rotation = direction == 0 ? 32 : 96;
+            }
+
+            bogie_front->direction = 1;
+            bogie_front->point = 1;
+            bogie_back->direction = 1;
+            bogie_back->point = 1;
+        } else if (track_asset->track_type == TUNNEL_BOTTOM || track_asset->track_type == DEPOT_BOTTOM) {
+            if (!unk) {
+                car->rotation = direction == 0 ? 96 : 32;
+            }
+
+            bogie_front->direction = 0;
+            bogie_front->point = track_asset->num_points - 1;
+            bogie_back->direction = 0;
+            bogie_back->point = track_asset->num_points - 1;
+        }
+    }
+
+    forward_bogie->track = track;
+    forward_bogie->direction = cars[0]->bogie_front->direction;
+    forward_bogie->point = cars[0]->bogie_front->point;
+    forward_bogie->x = track_asset->points[forward_bogie->point] + track->tile.x;
+    forward_bogie->y = track_asset->points[forward_bogie->point+1] + track->tile.y;
+
+    if (track_type == 2) {
+        forward_bogie->tunnel_state = 4;
+    } else {
+        forward_bogie->depot_state = 5;
+    }
+
+    if (direction != 0) {
+        // TODO
+    }
+
+    // TODO
+
+    return false;
 }

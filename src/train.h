@@ -3,11 +3,13 @@
 
 #include "building.h"
 #include "entity.h"
+#include "rect.h"
 #include "savegame.h"
 #include <cstdint>
 #include "track.h"
 #include "train_bogie.h"
 #include "train_car.h"
+#include "depot.h"
 
 enum class TrainState {
     UNKNOWN_1 = 0,
@@ -33,54 +35,42 @@ public:
     int32_t crash_timer; // 28
     bool on_bridge; // 2c
 
-    // some tile_x and tile_y of ???
-    int16_t field_2e; // 2e
-    int16_t field_30; // 30
+    Points track_tile; // 2e
+    Points field_32; // 32
 
-    // tile_x and tile_y of depot initially
-    int16_t field_32; // 32
-    int16_t field_34; // 34
-
-    // this is probably waiting time left at station
     int16_t station_timer; // 36
 
     // Not sure about type
     uint8_t field_38[8]; // 38
 
     int16_t speed; // 58
-
-    bool field_5a; // 5a
-
-    // some state (0 = normal, 1 = waiting, 2 = ?, 3 = ?, 4 = crashed)
+    bool reversing; // 5a
     TrainState train_state; // 5c
     uint32_t tunnel_state; // 60
     uint32_t depot_state; // 64
 
     uint32_t field_68; // 68
-
     uint32_t field_70; // 70
-
     uint8_t field_78;
-    uint8_t field_7a;
+    uint16_t field_7a;
     uint8_t field_7c;
-
-
     bool field_88; // 88
     uint32_t field_8c; // 8c
     bool field_90; // 90
 
-
-
     Train(uint32_t engine_resource_id, uint32_t unk1, bool unk2, bool unk3);
 
     bool ReverseDirection() { /* TODO */ return false; }
-    void SetVisible(bool param);
+    void SetVisible(bool visible);
     void SetState(TrainState state);
     Track* GetTrack();
     void Update();
     bool HasPassengerCar();
     bool IsPlainTrack();
     bool IsOnBridge();
+    bool AddCar(int32_t resource_id, TrainCarType type, bool tunnel);
+    void ExitDepot(Depot* depot, bool unk);
+    bool SetTrack(Track* track, bool unk);
 };
 
 #endif //OPENLOCO_TRAIN_H
