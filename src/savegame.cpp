@@ -108,11 +108,11 @@ bool LoadSavegame(const std::string &path, bool unk1, bool unk2) {
         if (savegame_train) {
             Depot* depot = (Depot*) BUILDING_MANAGER.GetRandomBuilding(3);
             if (depot) {
-                Train* train = TRAIN_MANAGER.AddTrain(depot, savegame_train);
-                if (train) {
-                    train->SetVisible(false);
-                    train->cars[0]->SetName(std::string(savegame_train->name));
-                }
+                // Train* train = TRAIN_MANAGER.AddTrain(depot, savegame_train);
+                // if (train) {
+                //     train->SetVisible(false);
+                //     train->cars[0]->SetName(std::string(savegame_train->name));
+                // }
             }
 
         }
