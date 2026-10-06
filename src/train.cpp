@@ -367,11 +367,95 @@ bool Train::SetStartingTrack(Track* track, bool keep_orientation) {
         forward_bogie->depot_state = 5;
     }
 
-    if (direction != 0) {
-        // TODO
+    if (direction == 0) {
+        int32_t j = 0;
+
+        for (size_t i = 0; i <= last_car; i++) {
+            TrainCar* car = cars[i];
+            switch (track_asset->track_type) {
+            case TUNNEL_LEFT:
+            case DEPOT_LEFT:
+                car->bogie_front->x = i == 0 ?
+                    forward_bogie->x - 12 : cars[0]->bogie_front->x - j;
+                car->bogie_front->y = forward_bogie->y;
+                car->bogie_back->x = car->bogie_front->x - 22;
+                car->bogie_back->y = forward_bogie->y;
+                break;
+            case TUNNEL_RIGHT:
+            case DEPOT_RIGHT:
+                car->bogie_front->x = i == 0 ?
+                    forward_bogie->x + 12 : cars[0]->bogie_front->x + j;
+                car->bogie_front->y = forward_bogie->y;
+                car->bogie_back->x = car->bogie_front->x + 22;
+                car->bogie_back->y = forward_bogie->y;
+                break;
+            case TUNNEL_TOP:
+            case DEPOT_TOP:
+                car->bogie_front->y = i == 0 ?
+                    forward_bogie->y - 12 : cars[0]->bogie_front->y - j;
+                car->bogie_front->x = forward_bogie->x;
+                car->bogie_back->x = forward_bogie->x;
+                car->bogie_back->y = car->bogie_front->y - 22;
+                break;
+            case TUNNEL_BOTTOM:
+            case DEPOT_BOTTOM:
+                car->bogie_front->y = i == 0 ?
+                    forward_bogie->y + 12 : cars[0]->bogie_front->y + j;
+                car->bogie_front->x = forward_bogie->x;
+                car->bogie_back->x = forward_bogie->x;
+                car->bogie_back->y = car->bogie_front->y + 22;
+                break;
+            default:
+                break;
+            }
+
+            j += 38;
+        }
+    } else if (direction == 1) {
+        int32_t j = 0;
+
+        for (size_t i = last_car; i >= 0; i--) {
+            TrainCar* car = cars[i];
+            switch (track_asset->track_type) {
+            case TUNNEL_LEFT:
+            case DEPOT_LEFT:
+                car->bogie_back->x = i == last_car ?
+                    forward_bogie->x - 12 : cars[last_car]->bogie_back->x - j;
+                car->bogie_back->y = forward_bogie->y;
+                car->bogie_front->x = car->bogie_back->x - 22;
+                car->bogie_front->y = forward_bogie->y;
+                break;
+            case TUNNEL_RIGHT:
+            case DEPOT_RIGHT:
+                car->bogie_back->x = i == last_car ?
+                    forward_bogie->x + 12 : cars[last_car]->bogie_back->x + j;
+                car->bogie_back->y = forward_bogie->y;
+                car->bogie_front->x = car->bogie_back->x + 22;
+                car->bogie_front->y = forward_bogie->y;
+                break;
+            case TUNNEL_TOP:
+            case DEPOT_TOP:
+                car->bogie_back->y = i == last_car ?
+                    forward_bogie->y - 12 : cars[last_car]->bogie_back->y - j;
+                car->bogie_back->x = forward_bogie->x;
+                car->bogie_front->x = forward_bogie->x;
+                car->bogie_front->y = car->bogie_back->y - 22;
+                break;
+            case TUNNEL_BOTTOM:
+            case DEPOT_BOTTOM:
+                car->bogie_back->y = i == last_car ?
+                    forward_bogie->y + 12 : cars[last_car]->bogie_back->y + j;
+                car->bogie_back->x = forward_bogie->x;
+                car->bogie_front->x = forward_bogie->x;
+                car->bogie_front->y = car->bogie_back->y + 22;
+                break;
+            default:
+                break;
+            }
+
+            j += 38;
+        }
     }
 
-    // TODO
-
-    return false;
+    return true;
 }
