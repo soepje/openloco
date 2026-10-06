@@ -262,7 +262,7 @@ bool Train::AddCar(int32_t resource_id, TrainCarType type, bool tunnel) {
     return false;
 }
 
-void Train::ExitDepot(Depot* depot, bool unk) {
+void Train::ExitDepot(Depot* depot, bool keep_orientation) {
     track_tile = depot->tile;
     if (depot->train && depot->train != this) {
         depot->QueueTrain(this);
@@ -279,12 +279,11 @@ void Train::ExitDepot(Depot* depot, bool unk) {
     }
     SetState(TrainState::DRIVE);
     SetVisible(true);
-    SetTrack(depot, unk);
+    SetStartingTrack(depot, keep_orientation);
     depot->field_11c = 0;
 }
 
-// More like set spawn track, this code assumes track is a depot or tunnel
-bool Train::SetTrack(Track* track, bool unk) {
+bool Train::SetStartingTrack(Track* track, bool keep_orientation) {
     if (!track) {
         return false;
     }
@@ -318,7 +317,7 @@ bool Train::SetTrack(Track* track, bool unk) {
         }
 
         if (track_asset->track_type == TUNNEL_LEFT || track_asset->track_type == DEPOT_LEFT) {
-            if (!unk) {
+            if (!keep_orientation) {
                 car->rotation = direction == 0 ? 64 : 0;
             }
 
@@ -327,7 +326,7 @@ bool Train::SetTrack(Track* track, bool unk) {
             bogie_back->direction = 0;
             bogie_back->point = track_asset->num_points - 1;
         } else if (track_asset->track_type == TUNNEL_RIGHT || track_asset->track_type == DEPOT_RIGHT) {
-            if (!unk) {
+            if (!keep_orientation) {
                 car->rotation = direction == 0 ? 0 : 64;
             }
 
@@ -336,7 +335,7 @@ bool Train::SetTrack(Track* track, bool unk) {
             bogie_back->direction = 1;
             bogie_back->point = 1;
         } else if (track_asset->track_type == TUNNEL_TOP || track_asset->track_type == DEPOT_TOP) {
-            if (!unk) {
+            if (!keep_orientation) {
                 car->rotation = direction == 0 ? 32 : 96;
             }
 
@@ -345,7 +344,7 @@ bool Train::SetTrack(Track* track, bool unk) {
             bogie_back->direction = 1;
             bogie_back->point = 1;
         } else if (track_asset->track_type == TUNNEL_BOTTOM || track_asset->track_type == DEPOT_BOTTOM) {
-            if (!unk) {
+            if (!keep_orientation) {
                 car->rotation = direction == 0 ? 96 : 32;
             }
 

@@ -602,8 +602,23 @@ bool TrackAsset::Parse(std::istream &is) {
     return true;
 }
 
-TrainAsset::TrainAsset(uint32_t id, const std::string& name) : BaseAsset(id, name) {
+TrainAsset::TrainAsset(uint32_t id, const std::string& name_) : BaseAsset(id, "") {
+    if (!name_.empty()) {
+        std::string dat_name = name_ + ".dat";
+        image_name = name_ + ".bmp";
 
+        size_t resource_size = 0;
+        char* resource = ResourceManager::GetInstance()->Get(dat_name, resource_size);
+        std::istringstream is(std::string(resource, resource_size));
+
+        if (TrainAsset::Parse(is)) {
+            success = BaseAsset::Parse(is);
+        } else {
+            success = false;
+        }
+
+        delete resource;
+    }
 }
 
 
@@ -613,11 +628,17 @@ bool TrainAsset::Parse(std::istream &is) {
         is >> word; // skip "speed"
         is >> speed_slow;
         is >> speed_fast;
+
+        int32_t trailer;
+        is >> trailer;
+        if (trailer != -9) {
+            return false;
+        }
     }
 
     ParseTrainData();
 
-    return true; // TODO
+    return true;
 }
 
 bool TrainAsset::ParseTrainData() {
@@ -715,7 +736,7 @@ bool AssetManager::LoadAsset(uint32_t id, const std::string& name) {
             if (id == 6146) {
                 return false;
             }
-            asset = (id < 6246 && id % 2 == 0) ? new TrainAsset(id, name) : new BaseAsset(id, name);
+            asset = (id < 6246 && id % 2 != 0) ? new BaseAsset(id, name) : new TrainAsset(id, name);
             break;
         case 7:
         case 8:

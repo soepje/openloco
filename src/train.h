@@ -69,8 +69,8 @@ public:
     bool IsPlainTrack();
     bool IsOnBridge();
     bool AddCar(int32_t resource_id, TrainCarType type, bool tunnel);
-    void ExitDepot(Depot* depot, bool unk);
-    bool SetTrack(Track* track, bool unk);
+    void ExitDepot(Depot* depot, bool keep_orientation);
+    bool SetStartingTrack(Track* track, bool unk);
 };
 
 #endif //OPENLOCO_TRAIN_H
