@@ -1,11 +1,23 @@
 #include "train_manager.h"
 #include "openloco.h"
 #include "train_car.h"
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 
+TrainManager::TrainManager() {
+    num_trains = 0;
+    field_6 = 0;
+    for (size_t i = 0; i < 4; i++) {
+        train_cars[i] = nullptr;
+    }
+    for (size_t i = 0; i < 16; i++) {
+        train_cars[i] = nullptr;
+    }
+}
+
 Train* TrainManager::AddTrain(Depot* depot, SavegameTrain* savegame_train) {
-    if (field_4 > 3 || field_6 > 2) {
+    if (num_trains > 3 || field_6 > 2) {
         return nullptr;
     }
 
@@ -55,7 +67,7 @@ Train* TrainManager::AddTrain(Depot* depot, SavegameTrain* savegame_train) {
                 }
             }
 
-            field_4++;
+            num_trains++;
             field_6++;
             trains[i]->ExitDepot(depot, true);
             return trains[i];
@@ -66,7 +78,7 @@ Train* TrainManager::AddTrain(Depot* depot, SavegameTrain* savegame_train) {
 }
 
 void TrainManager::Update() {
-    if (field_4 != 0 && (GAME_STATE == 3 || GAME_STATE == 9)) {
+    if (num_trains != 0 && (GAME_STATE == 3 || GAME_STATE == 9)) {
         for (auto train : trains) {
             if (train) {
 
@@ -77,4 +89,48 @@ void TrainManager::Update() {
 
 void TrainManager::DetectCollisions(Train* train) {
     // TODO
+}
+
+void TrainManager::Draw(Rect r, int16_t z) {
+    for (size_t i = 0; i < 16; i++) {
+        TrainCar* car = train_cars[i];
+        if (!car) {
+            break;
+        }
+
+        if (car->ShouldDraw(r.left, r.top, z)) {
+            if(car->Draw(r)) {
+                // TODO
+            }
+        }
+
+        // TODO
+    }
+}
+
+void TrainManager::UpdateTrainCars() {
+    size_t n = 0;
+
+    for (size_t i = 0; i < 4; i++) {
+        Train* train = trains[i];
+        if (train) {
+            for (size_t j = 0; j <= train->last_car; j++) {
+                TrainCar* train_car = train->cars[j];
+                // TODO restore
+                // if (train_car->depot_state != 2 && train_car->depot_state != 5 && train_car->tunnel_state != 2) {
+                    train_cars[n] = train_car;
+                    n++;
+                // }
+            }
+        }
+    }
+
+    // lazy
+    std::sort(train_cars, train_cars + n, [](const TrainCar* a, const TrainCar* b) { return a->bogie_front->y < b->bogie_front->y; });
+}
+
+void TrainManager::ClearTrainCars() {
+    for (size_t i = 0; i < 16; i++) {
+        train_cars[i] = nullptr;
+    }
 }

@@ -236,7 +236,7 @@ Track* Train::GetTrack() {
 bool Train::IsOnBridge() {
     on_bridge = false;
     for (size_t i = 0; i <= last_car; i++) {
-        if (cars[i]->on_bridge) {
+        if (cars[i]->z) {
             on_bridge = true;
             return on_bridge;
         }

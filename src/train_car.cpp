@@ -30,7 +30,7 @@ TrainCar::TrainCar(uint32_t resource_id_, TrainCarType train_type_, bool tunnel)
             depot_state = 2;
             tunnel_state = 0;
         }
-        on_bridge = 0;
+        z = 0;
         SetRect(view, 0, 0, 0, 0);
         SetFrame(rotation, true);
         field_424 = 0;
@@ -81,14 +81,14 @@ void TrainCar::Update(Train* train) {
             if (track_asset->track_type == TrackAssetType::BRIDGE_HORIZONTAL) {
                 moved = MoveBridge(train);
             } else if (bogie_front->track->view.bottom - 32 < bogie_front->y || bogie_back->track->view.bottom - 32 < bogie_back->y || bogie_front->track != bogie_back->track) {
-                on_bridge = 0;
+                z = 0;
                 moved = false;
             } else {
-                on_bridge = 1;
+                z = 1;
                 moved = false;
             }
         } else {
-            on_bridge = 0;
+            z = 0;
             train->IsOnBridge();
         }
     }
@@ -275,4 +275,27 @@ bool TrainCar::UpdateDepotExitVisibility(Train* train) {
 bool TrainCar::MoveBridge(Train* train) {
     // TODO
     return false;
+}
+
+bool TrainCar::ShouldDraw(int16_t x, int16_t y, int16_t z) {
+    return this->z == z &&
+        view.left <= x && x <= view.right &&
+        view.top <= y && y <= view.bottom;
+}
+
+bool TrainCar::Draw(Rect r) {
+    Rect dest;
+    if (!IntersectRect(dest, view, r)) {
+        return false;
+    }
+
+    Rect src;
+    src.left = view.left < r.left ? (r.left - view.left) + asset_mask.left : asset_mask.left;
+    src.top = view.top < r.top ? (r.top - view.top) : asset_mask.top;
+    src.right = r.left + 16 < view.right ? (r.left - view.left) + 16 + asset_mask.left : asset_mask.right;
+    src.bottom = r.top + 16 < view.bottom ? (r.top - view.top) + 16 : asset_mask.bottom;
+
+    asset->bitmap->Draw(dest, nullptr, src, flags);
+
+    return true;
 }

@@ -141,10 +141,12 @@ void World::UpdateDimensions() {
 
 void World::Draw() {
     // TODO implement more efficient implementation
+    TRAIN_MANAGER.UpdateTrainCars();
     dirty.set();
     Rect r = {0, 0, 1200, 800};
     BACKDROP->bitmap->Draw(r, nullptr, r, 1);
     DrawRect(r);
+    TRAIN_MANAGER.ClearTrainCars();
 }
 
 void World::DrawRect(const Rect& r) {
@@ -181,11 +183,11 @@ void World::DrawRect(const Rect& r) {
                 if (GAME_STATE == WORLD_VIEW) {
                     if (z == 0) {
                         if (t.bitmap_occupancy[z] != nullptr && t.bitmap_occupancy[z]->asset->type == TRACK) {
-                            // TODO TRAIN_MANAGER.Draw();
+                            TRAIN_MANAGER.Draw(r, z);
                             MINIFIG_MANAGER.Draw(z, r2, false);
                         } else {
                             MINIFIG_MANAGER.Draw(z, r2, false);
-                            // TODO TRAIN_MANAGER.Draw();
+                            TRAIN_MANAGER.Draw(r, z);
                         }
                     }
 

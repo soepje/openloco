@@ -31,7 +31,7 @@ public:
     bool field_43c; // 43c
     uint32_t tunnel_state; // 440
     uint32_t depot_state; // 444
-    uint16_t on_bridge; // 448
+    uint16_t z; // 448
     Train* train; // 44c
 
     TrainCar(uint32_t resource_id, TrainCarType type, bool tunnel);
@@ -47,6 +47,8 @@ public:
     void UpdatePosition();
     void UpdateRotation();
     bool MoveBridge(Train* train);
+    bool ShouldDraw(int16_t x, int16_t y, int16_t z);
+    bool Draw(Rect r);
 
     static TrainCarType GetTrainCarType(int resource_id);
 };
