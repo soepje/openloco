@@ -1,6 +1,8 @@
-# Openloco
+<p align="center">
+    <img src="./openloco.png"/>
+</p>
 
-![Openloco](openloco.png)
+# Openloco
 
 This is a still very much work in progress reimplementation of Lego Loco. 
 

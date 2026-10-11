@@ -410,14 +410,19 @@ bool Train::CanReverse() {
     return true;
 }
 
-Track* Train::GetTrack() {
+Track* Train::GetCrossing() {
     TrainBogie* bogie = nullptr;
     if (direction == 0) {
         bogie = cars[last_car]->bogie_back;
     } else {
         bogie = cars[0]->bogie_front;
     }
-    return nullptr; // TODO
+
+    if (bogie->track->track_type == TrackType::CROSSING) {
+        return bogie->track;
+    }
+
+    return nullptr;
 }
 
 bool Train::IsOnBridge() {

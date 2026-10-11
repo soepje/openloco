@@ -669,7 +669,7 @@ bool TrainBogie::Move(Train* train, TrainCar* train_segment) {
     }
 
     if (track_asset->IsNextTrack(point)) {
-        Track* unk = train->GetTrack();
+        Track* crossing = train->GetCrossing();
         if (!UpdateTrack()) {
             track_asset = dynamic_cast<TrackAsset*>(track->asset);
 
@@ -683,8 +683,8 @@ bool TrainBogie::Move(Train* train, TrainCar* train_segment) {
                 train_segment->depot_state = 1;
             }
 
-            if (unk != nullptr && unk->num_trains == 0) {
-                unk->SetSomething(1);
+            if (crossing != nullptr && crossing->num_trains == 0) {
+                crossing->SetSomething(1);
             }
         } else {
             switch (dynamic_cast<TrackAsset*>(track->asset)->track_type) {

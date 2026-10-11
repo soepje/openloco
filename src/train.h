@@ -67,7 +67,7 @@ public:
     int16_t SetSpeed(int16_t speed);
     void SetVisible(bool visible);
     void SetState(TrainState state);
-    Track* GetTrack();
+    Track* GetCrossing();
     void Update();
     bool HasPassengerCar();
     bool CanReverse();
