@@ -1,5 +1,6 @@
 #include "train_manager.h"
 #include "openloco.h"
+#include "train.h"
 #include "train_car.h"
 #include <algorithm>
 #include <cstdio>
@@ -7,9 +8,9 @@
 
 TrainManager::TrainManager() {
     num_trains = 0;
-    field_6 = 0;
+    num_trains2 = 0;
     for (size_t i = 0; i < 4; i++) {
-        train_cars[i] = nullptr;
+        trains[i] = nullptr;
     }
     for (size_t i = 0; i < 16; i++) {
         train_cars[i] = nullptr;
@@ -17,7 +18,7 @@ TrainManager::TrainManager() {
 }
 
 Train* TrainManager::AddTrain(Depot* depot, SavegameTrain* savegame_train) {
-    if (num_trains > 3 || field_6 > 2) {
+    if (num_trains > 3 || num_trains2 > 2) {
         return nullptr;
     }
 
@@ -68,7 +69,7 @@ Train* TrainManager::AddTrain(Depot* depot, SavegameTrain* savegame_train) {
             }
 
             num_trains++;
-            field_6++;
+            num_trains2++;
             trains[i]->ExitDepot(depot, true);
             return trains[i];
         }
@@ -79,9 +80,21 @@ Train* TrainManager::AddTrain(Depot* depot, SavegameTrain* savegame_train) {
 
 void TrainManager::Update() {
     if (num_trains != 0 && (GAME_STATE == 3 || GAME_STATE == 9)) {
-        for (auto train : trains) {
+        for (size_t i = 0; i < 4; i++) {
+            Train* train = trains[i];
             if (train) {
+                DetectCollisions(train);
+                train->Update();
 
+                if (train->train_state == TrainState::UNKNOWN_2) {
+                    for (size_t j = 0; j < 8; j++) {
+                        // TODO
+                    }
+
+                    // TODO
+                } else if (train->field_68 == 1) {
+                    // TODO
+                }
             }
         }
     }
@@ -100,11 +113,9 @@ void TrainManager::Draw(Rect r, int16_t z) {
 
         if (car->ShouldDraw(r.left, r.top, z)) {
             if(car->Draw(r)) {
-                // TODO
+                // TODO handle z == 1
             }
         }
-
-        // TODO
     }
 }
 
@@ -116,11 +127,10 @@ void TrainManager::UpdateTrainCars() {
         if (train) {
             for (size_t j = 0; j <= train->last_car; j++) {
                 TrainCar* train_car = train->cars[j];
-                // TODO restore
-                // if (train_car->depot_state != 2 && train_car->depot_state != 5 && train_car->tunnel_state != 2) {
+                if (train_car->depot_state != 2 && train_car->depot_state != 5 && train_car->tunnel_state != 2) {
                     train_cars[n] = train_car;
                     n++;
-                // }
+                }
             }
         }
     }

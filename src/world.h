@@ -76,8 +76,8 @@ public:
     void Draw();
     void DrawRect(const Rect& r);
     Entity* AddTile(uint32_t resource_id, int16_t x, int16_t y, bool no_offset, uint32_t unk2);
-    Entity* GetTile(int16_t x, int16_t y, int16_t z);
-    std::tuple<int16_t, int16_t> GetTilePosition(int16_t x, int16_t y, int16_t z);
+    Building* GetBuilding(int16_t x, int16_t y, int16_t z);
+    Points GetTilePosition(int16_t x, int16_t y, int16_t z);
     Entity* GetNeighborTile(Entity* entity, uint32_t direction);
 
     void MarkDirty(Rect r){ /* TODO */}

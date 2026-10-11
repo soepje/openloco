@@ -7,14 +7,14 @@
 #include "openloco.h"
 #include "building.h"
 
-Entity *World::GetTile(int16_t x, int16_t y, int16_t z) {
+Building *World::GetBuilding(int16_t x, int16_t y, int16_t z) {
     if (x >= 0 && x < 81 && y >= 0 && y < 65) {
         return grid[x][y].physical_occupancy[z];
     }
     return nullptr;
 }
 
-std::tuple<int16_t, int16_t> World::GetTilePosition(int16_t x, int16_t y, int16_t z) {
+Points World::GetTilePosition(int16_t x, int16_t y, int16_t z) {
     if (x >= 0 && x < 81 && y >= 0 && y < 65) {
         Building* building = dynamic_cast<Building*>(grid[x][y].physical_occupancy[z]);
         return {building->tile.x, building->tile.y};

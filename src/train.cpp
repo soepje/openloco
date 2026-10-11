@@ -3,11 +3,14 @@
 #include "train.h"
 #include "asset.h"
 #include "building.h"
+#include "rect.h"
 #include "track.h"
 #include "train_bogie.h"
 #include "train_car.h"
+#include "globals.h"
+#include "tunnel.h"
 
-Train::Train(uint32_t engine_resource_id, uint32_t unk1, bool unk2, bool unk3) {
+Train::Train(uint32_t engine_resource_id, uint32_t unk1, bool tunnel, bool unk3) {
     track_tile = {-1, -1};
     field_32 = {-1, -1};
 
@@ -27,17 +30,16 @@ Train::Train(uint32_t engine_resource_id, uint32_t unk1, bool unk2, bool unk3) {
     cars[2] = nullptr;
     cars[3] = nullptr;
 
-    // TODO not to sure about this
     for (size_t i = 0; i < 8; i++) {
-        field_38[i] = 0;
+        passengers[i] = nullptr;
     }
 
-    forward_bogie = new TrainBogie(unk2);
+    forward_bogie = new TrainBogie(tunnel);
 
     crash_timer = 0;
     last_car = 0;
 
-    cars[0] = new TrainCar(engine_resource_id, TrainCarType::ENGINE, unk2);
+    cars[0] = new TrainCar(engine_resource_id, TrainCarType::ENGINE, tunnel);
 
     TrainCar* segment = cars[last_car];
     if (segment) {
@@ -48,14 +50,39 @@ Train::Train(uint32_t engine_resource_id, uint32_t unk1, bool unk2, bool unk3) {
             speed_slow = train_asset->speed_slow;
             speed_fast = train_asset->speed_fast;
             speed = train_asset->speed_slow;
-
-            // point = 0;
+            direction = 0;
 
             SetState(TrainState::UNKNOWN_1);
 
             station_timer = 0;
 
-            // TODO
+            if (false) {
+                // TODO
+            } else {
+                field_78 = 1;
+                field_7c = 1;
+            }
+
+            if (!tunnel) {
+                // TODO increment counter
+                field_7a = 0;
+                forward_bogie->SetTrack(-1, -1);
+                // TODO
+            }
+
+            field_89 = false;
+            field_8a = false;
+            field_70 = 0;
+
+            if (!tunnel) {
+                depot_state = 2;
+                tunnel_state = 0;
+                SetVisible(false);
+            } else {
+                tunnel_state = 2;
+                depot_state = 0;
+                SetVisible(true);
+            }
         } else {
             delete segment;
             cars[last_car] = nullptr;
@@ -82,9 +109,10 @@ void Train::Update() {
 
     int local_c = 0;
 
-    if (train_state == TrainState::UNKNOWN_1 || train_state == TrainState::CRASHED || tunnel_state == 2 || tunnel_state == 3 || depot_state == 2 || speed == 0 || station_timer > 0 || (train_state != TrainState::DRIVE && train_state != TrainState::STOPPED)) {
+    if (!(train_state == TrainState::UNKNOWN_1 || train_state == TrainState::CRASHED ||
+        tunnel_state == 2 || tunnel_state == 3 || depot_state == 2 || speed == 0 || station_timer > 0 ||
+        (train_state != TrainState::DRIVE && train_state != TrainState::STOPPED))) {
 
-    } else {
         bool go = false;
         Track* track = forward_bogie->track;
         if (track) {
@@ -133,11 +161,144 @@ void Train::Update() {
                     }
                 }
 
+                if (train_state == TrainState::DRIVE) {
+                    TrainCar* engine = cars[0];
+                    int resource_id = engine->asset == nullptr ? -1 : engine->asset->id;
+                    if (resource_id == 6152 && engine->visible && engine->depot_state == 0 && engine->tunnel_state == 0) {
+                        if (puff_timer == 10) {
+                            // TODO trigger effect
+                            puff_timer = 0;
+                        } else {
+                            puff_timer++;
+                        }
+                    }
+                    if (direction == 0) {
+                        for (size_t j = 0; j <= last_car; j++) {
+                            cars[j]->Update(this);
+                        }
+                    } else if (direction == 1) {
+                        for (size_t j = last_car; j >= 0; j--) {
+                            cars[j]->Update(this);
+                        }
+                    }
+                }
 
+                Track* forward_bogie_track = forward_bogie->track;
+                if (forward_bogie_track != nullptr && forward_bogie_track->track_type == TrackType::SWITCH && train_state != TrainState::UNKNOWN_1) {
+                    if (forward_bogie_track->track_state == TrackState::SWITCH_GO) {
+                        SetState(TrainState::DRIVE);
+                    } else if (forward_bogie_track->track_state == TrackState::SWITCH_REVERSE) {
+                        if (reversing) {
+                            SetState(TrainState::DRIVE);
+                        } else {
+                            reversing = true;
+                            ReverseDirection();
+                            reversing = false;
+                            SetState(TrainState::DRIVE);
+                        }
+                    } else if (forward_bogie_track->track_state == TrackState::SWITCH_STOP) {
+                        if (train_state != TrainState::STOPPED) {
+                            SetState(TrainState::STOPPED);
+                        }
+                    }
+                }
 
+                if (tunnel_state == 1) {
+                    if (cars[last_car]->tunnel_state == 2 && cars[0]->tunnel_state == 2) {
+                        tunnel_state = 2;
+                        forward_bogie->tunnel_state = 2;
+
+                        Tunnel* tunnel = dynamic_cast<Tunnel*>(forward_bogie->track);
+                        tunnel->field_11c = 0;
+                        switch (tunnel->asset->id) {
+                        case 3138:
+                        case 3140:
+                        case 3142:
+                        case 3144:
+                            tunnel_state = 3;
+                            SetVisible(false);
+                            field_68 = 1;
+                            break;
+                        default:
+                            Tunnel* out_tunnel = dynamic_cast<Tunnel*>(BUILDING_MANAGER.GetRandomBuilding(0));
+                            if (out_tunnel == nullptr) {
+                                SetState(TrainState::UNKNOWN_2);
+                            } else {
+                                out_tunnel->QueueTrain(this);
+                            }
+                            break;
+                        }
+                    }
+                } else if (depot_state == 1) {
+                    if (cars[last_car]->depot_state == 2 && cars[0]->depot_state == 2) {
+                        depot_state = 2;
+                        SetVisible(false);
+                        forward_bogie->depot_state = 2;
+                        Depot* building = dynamic_cast<Depot*>(WORLD.GetBuilding(forward_bogie->track->tile.x, forward_bogie->track->tile.y + 1, 0));
+                        if (building == nullptr) {
+                            return;
+                        }
+                        building->train = this;
+                        building->SetSomething(1);
+                        building->field_11c = 1;
+                        field_32 = building->tile;
+                    }
+                }
+
+                if (depot_state == 4 || depot_state == 5) {
+                    // TODO call something in train
+                }
             }
 
-            // TOOD
+            if (field_68 == 0 && tunnel_state != 2 && tunnel_state != 3) {
+                for (size_t j = 0; j <= last_car; j++) {
+                    TrainCar* car = cars[j];
+                    if (car->field_48 != nullptr) {
+                        // TODO call something
+                    }
+                }
+            }
+        }
+    }
+
+    if (tunnel_state == 2 || (tunnel_state == 3 && field_68 != 1)) {
+        Building* b = WORLD.GetBuilding(track_tile.x, track_tile.y + 1, 0);
+        if (b == nullptr) {
+            Tunnel* t = dynamic_cast<Tunnel*>(BUILDING_MANAGER.GetRandomBuilding(4));
+            if (t == nullptr) {
+                SetState(TrainState::UNKNOWN_2);
+                return;
+            }
+            t->QueueTrain(this);
+        }
+    }
+
+    if (train_state == TrainState::CRASHED) {
+        if (crash_timer == 0) {
+            SetState(TrainState::UNKNOWN_1);
+            crash_timer = 0;
+            SetSpeed(speed_slow);
+            if (!reversing && CanReverse()) {
+                reversing = true;
+                ReverseDirection();
+                reversing = false;
+            }
+            SetState(TrainState::DRIVE);
+        } else {
+            crash_timer--;
+        }
+    }
+
+    if (local_c != 0 && depot_state == 0 && 3 < depot_state && depot_state < 6) {
+        int16_t x = forward_bogie->x < 0 ? -1 : forward_bogie->x / 16;
+        int16_t y = forward_bogie->y < 0 ? -1 : forward_bogie->y / 16;
+        // TODO call something in train mystery
+    }
+
+    if (forward_bogie->track != nullptr && depot_state != 2 && tunnel_state != 2 && tunnel_state != 3) {
+        int32_t resource_id = forward_bogie->track->asset->id;
+        if (resource_id == 3164 || resource_id == 31646 || resource_id == 3168) {
+            // TODO call something in train mystery
         }
     }
 }
@@ -151,8 +312,33 @@ bool Train::HasPassengerCar() {
     return false;
 }
 
-void Train::SetVisible(bool param) {
-    // TODO
+void Train::SetVisible(bool visible) {
+    if (tunnel_state != 2 && tunnel_state != 3 && field_68 == 0) {
+        if (cars[0]->field_48 == nullptr) {
+            cars[0]->TriggerSound();
+        }
+
+        for (size_t i = 0; i <= last_car; i++) {
+            TrainCar* car = cars[i];
+            if (car != nullptr) {
+                if (car->visible != visible) {
+                    continue;
+                }
+
+                car->visible = visible;
+
+                WORLD.MarkDirty(car->view);
+
+                if (car->field_48 != nullptr) {
+                    if (visible && train_state != TrainState::UNKNOWN_1 && train_state != TrainState::STOPPED && train_state != TrainState::CRASHED) {
+                        // TODO play sound
+                    } else {
+                        // TODO stop sound
+                    }
+                }
+            }
+        }
+    }
 }
 
 void Train::SetState(TrainState state) {
@@ -189,7 +375,7 @@ void Train::SetState(TrainState state) {
     }
 }
 
-bool Train::IsPlainTrack() {
+bool Train::CanReverse() {
     if (train_state == TrainState::CRASHED || reversing) {
         return false;
     }

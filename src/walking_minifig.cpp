@@ -128,7 +128,7 @@ bool WalkingMinifig::IsValidTarget(Point p) {
         int16_t tile_x = p1.x < 0 ? -1 : p1.x / 16; // TODO this code is repeated often, maybe move to utility?
         int16_t tile_y = p1.y < 0 ? -1 : p1.y / 16;
 
-        Building* building = static_cast<Building*>(WORLD.GetTile(tile_x, tile_y, 0));
+        Building* building = static_cast<Building*>(WORLD.GetBuilding(tile_x, tile_y, 0));
         if (building) {
             int32_t building_type = building->asset ? building->asset->type : 0;
             if (building_type >= 2 && building_type <= 4) {

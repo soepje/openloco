@@ -10,6 +10,7 @@
 #include "train_bogie.h"
 #include "train_car.h"
 #include "depot.h"
+#include "walking_minifig.h"
 
 enum class TrainState {
     UNKNOWN_1 = 0,
@@ -40,8 +41,7 @@ public:
 
     int16_t station_timer; // 36
 
-    // Not sure about type
-    uint8_t field_38[8]; // 38
+    WalkingMinifig* passengers[8]; // 38
 
     int16_t speed; // 58
     bool reversing; // 5a
@@ -50,23 +50,27 @@ public:
     uint32_t depot_state; // 64
 
     uint32_t field_68; // 68
+    int32_t puff_timer; // 6c
     uint32_t field_70; // 70
     uint8_t field_78;
     uint16_t field_7a;
     uint8_t field_7c;
     bool field_88; // 88
+    bool field_89; // 89
+    bool field_8a; // 8a
     uint32_t field_8c; // 8c
     bool field_90; // 90
 
     Train(uint32_t engine_resource_id, uint32_t unk1, bool unk2, bool unk3);
 
     bool ReverseDirection() { /* TODO */ return false; }
+    int16_t SetSpeed(int16_t speed) { /* TODO */ return 0; }
     void SetVisible(bool visible);
     void SetState(TrainState state);
     Track* GetTrack();
     void Update();
     bool HasPassengerCar();
-    bool IsPlainTrack();
+    bool CanReverse();
     bool IsOnBridge();
     bool AddCar(int32_t resource_id, TrainCarType type, bool tunnel);
     void ExitDepot(Depot* depot, bool keep_orientation);

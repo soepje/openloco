@@ -49,6 +49,7 @@ public:
     bool MoveBridge(Train* train);
     bool ShouldDraw(int16_t x, int16_t y, int16_t z);
     bool Draw(Rect r);
+    void TriggerSound() { /* TODO */}
 
     static TrainCarType GetTrainCarType(int resource_id);
 };

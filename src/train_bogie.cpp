@@ -106,7 +106,7 @@ bool TrainBogie::SetTrack(int32_t x, int32_t y) {
     int16_t tile_x = (x < 0) ? -1 : x / 16;
     int16_t tile_y = (y < 0) ? -1 : y / 16;
 
-    Building* building = dynamic_cast<Building*>(WORLD.GetTile(tile_x, tile_y, 0));
+    Building* building = dynamic_cast<Building*>(WORLD.GetBuilding(tile_x, tile_y, 0));
     if (!building) {
         return false;
     }
@@ -186,7 +186,7 @@ Track* TrainBogie::UpdateTrack() {
         return track;
     }
 
-    Track* next_track = dynamic_cast<Track*>(WORLD.GetTile(next_x / 16, next_y / 16, 0));
+    Track* next_track = dynamic_cast<Track*>(WORLD.GetBuilding(next_x / 16, next_y / 16, 0));
     TrackAsset* next_track_asset = dynamic_cast<TrackAsset*>(next_track->asset);
 
     // TODO check all offsets into points buffer
@@ -416,7 +416,7 @@ bool TrainBogie::Unk2(Train* train) {
             if (track_asset->IsTunnel()) {
                 auto track2 = dynamic_cast<Tunnel*>(train->forward_bogie->track);
                 if (track2->field_11c == 1 && train->tunnel_state != 1) {
-                    if(train->IsPlainTrack()) {
+                    if(train->CanReverse()) {
                         // TODO
 
                         return false;

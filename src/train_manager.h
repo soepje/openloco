@@ -9,7 +9,7 @@
 class TrainManager {
 public:
     uint16_t num_trains; // 4
-    uint16_t field_6; // 6
+    uint16_t num_trains2; // 6
     Train* trains[4]; // 8
     TrainCar* train_cars[16]; // 18
 
