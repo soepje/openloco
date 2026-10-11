@@ -854,3 +854,13 @@ bool TrainBogie::Move(Train* train, TrainCar* train_segment) {
     }
     return true;
 }
+
+void TrainBogie::Copy(TrainBogie* other) {
+    direction = other->direction;
+    point = other->point;
+    x = other->x;
+    y = other->y;
+    track = other->track;
+    tunnel_state = other->tunnel_state;
+    depot_state = other->depot_state;
+}

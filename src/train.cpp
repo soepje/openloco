@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <endian.h>
 
 #include "train.h"
 #include "asset.h"
@@ -12,7 +13,7 @@
 
 Train::Train(uint32_t engine_resource_id, uint32_t unk1, bool tunnel, bool unk3) {
     track_tile = {-1, -1};
-    field_32 = {-1, -1};
+    depot_tile = {-1, -1};
 
     field_88 = unk3;
     field_4 = unk1;
@@ -241,7 +242,7 @@ void Train::Update() {
                         building->train = this;
                         building->SetSomething(1);
                         building->field_11c = 1;
-                        field_32 = building->tile;
+                        depot_tile = building->tile;
                     }
                 }
 
@@ -644,4 +645,144 @@ bool Train::SetStartingTrack(Track* track, bool keep_orientation) {
     }
 
     return true;
+}
+
+int16_t Train::SetSpeed(int16_t speed) {
+    TrainCar* engine = cars[0];
+    if (engine == nullptr) {
+        return 0;
+    }
+
+    if (speed == speed_slow) {
+        this->speed = speed;
+        engine->SetSomething(0);
+        engine->SetFrame(engine->current_frame, false);
+    } else if (speed == speed_fast) {
+        this->speed = speed;
+        engine->SetSomething(1);
+        engine->SetFrame(engine->current_frame, false);
+    }
+
+    return this->speed;
+}
+
+bool Train::ReverseDirection() {
+    if (depot_state == 2 || tunnel_state == 2 || tunnel_state == 3) {
+        return false;
+    }
+
+    if (tunnel_state == 1) {
+        tunnel_state = 4;
+    } else if (tunnel_state == 4) {
+        tunnel_state = 1;
+    }
+
+    direction = direction == 0 ? 1 : 0;
+
+    for (size_t i = 0; i <= last_car; i++) {
+        TrainCar* car = cars[i];
+        car->bogie_front->ReverseDirection(this);
+        car->bogie_back->ReverseDirection(this);
+
+        if (car->tunnel_state > 0) {
+            if (car->tunnel_state < 3) {
+                car->tunnel_state = 4;
+            } else if (car->tunnel_state == 4) {
+                car->tunnel_state = 1;
+            }
+        }
+
+        if (car->bogie_front->tunnel_state == 1 || car->bogie_back->tunnel_state == 1) {
+            car->tunnel_state = 1;
+        }
+
+        switch (car->depot_state) {
+        case 1:
+            car->depot_state = 4;
+            break;
+        case 2:
+            car->depot_state = 5;
+            car->visible = false;
+            break;
+        case 4:
+            car->depot_state = 1;
+            car->UpdateDepotEnterVisibility(this);
+            break;
+        case 5:
+            if (car->bogie_front->depot_state == 1 || car->bogie_back->depot_state == 1) {
+                car->depot_state = 1;
+                car->UpdateDepotEnterVisibility(this);
+            } else {
+                car->depot_state = 2;
+                car->visible = false;
+            }
+            break;
+        default:
+           break;
+        }
+    }
+
+    forward_bogie->track->num_trains--;
+
+    bool ok;
+
+    if (direction == 1) {
+        forward_bogie->Copy(cars[last_car]->bogie_back);
+        forward_bogie->track->num_trains++;
+        for (size_t i = 0; i < 12; i++) {
+            ok = forward_bogie->Unk2(this);
+        }
+    } else {
+        forward_bogie->Copy(cars[0]->bogie_front);
+        forward_bogie->track->num_trains++;
+        for (size_t i = 0; i < 12; i++) {
+            ok = forward_bogie->Unk2(this);
+            if(!ok) {
+                break;
+            }
+        }
+    }
+
+    if ((tunnel_state == 4) && (forward_bogie->tunnel_state == 2)) {
+      forward_bogie->tunnel_state = 4;
+    }
+
+    forward_bogie->CheckTunnel();
+    forward_bogie->CheckDepot();
+
+    switch (forward_bogie->depot_state) {
+    case 0:
+        if (cars[0]->depot_state != 4 && cars[0]->depot_state != 5 &&
+            cars[last_car]->depot_state != 4 && cars[last_car]->depot_state != 5) {
+            if (depot_state == 0) {
+                break;
+            }
+            Depot* depot = dynamic_cast<Depot*>(WORLD.GetBuilding(depot_tile.x, depot_tile.y + 1, 0));
+            if (depot != nullptr && depot->train == this) {
+                depot->field_11c = 0;
+                depot->field_128 = false;
+                depot->SetSomething(0);
+                depot->train = nullptr;
+            }
+            depot_tile = {-1, -1};
+            depot_state = 0;
+            SetVisible(true);
+        } else {
+            depot_state = 4;
+            SetVisible(true);
+        }
+        break;
+    case 1:
+    case 2:
+        depot_state = 1;
+        SetVisible(true);
+        break;
+    case 4:
+    case 5:
+        depot_state = 4;
+        SetVisible(true);
+        break;
+    }
+
+    return ok;
 }

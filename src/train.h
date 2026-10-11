@@ -37,7 +37,7 @@ public:
     bool on_bridge; // 2c
 
     Points track_tile; // 2e
-    Points field_32; // 32
+    Points depot_tile; // 32
 
     int16_t station_timer; // 36
 
@@ -63,8 +63,8 @@ public:
 
     Train(uint32_t engine_resource_id, uint32_t unk1, bool unk2, bool unk3);
 
-    bool ReverseDirection() { /* TODO */ return false; }
-    int16_t SetSpeed(int16_t speed) { /* TODO */ return 0; }
+    bool ReverseDirection();
+    int16_t SetSpeed(int16_t speed);
     void SetVisible(bool visible);
     void SetState(TrainState state);
     Track* GetTrack();

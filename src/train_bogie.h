@@ -35,6 +35,7 @@ public:
     bool Unk2(Train* train);
     void ReverseDirection(Train* train);
     bool Move(Train* train, TrainCar* train_segment);
+    void Copy(TrainBogie* other);
 };
 
 #endif //OPENLOCO_TRAIN_BOGIE_H
