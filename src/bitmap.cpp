@@ -32,6 +32,14 @@ void Bitmap::Load(const std::string& name, uint32_t unknown, int32_t width_, int
         height = surface->h;
     }
 
+    // The train car textures are too large, but outside 8192 is not used
+    if (surface->w > 8192) {
+        auto* cropped_surface = SDL_CreateSurface(8192, surface->h, surface->format);
+        SDL_BlitSurface(surface, NULL, cropped_surface, NULL);
+        delete surface;
+        surface = cropped_surface;
+    }
+
     texture = SDL_CreateTextureFromSurface(renderer, surface);
 
     delete surface;
