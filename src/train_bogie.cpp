@@ -187,11 +187,11 @@ Track* TrainBogie::UpdateTrack() {
     }
 
     Track* next_track = dynamic_cast<Track*>(WORLD.GetBuilding(next_x / 16, next_y / 16, 0));
-    TrackAsset* next_track_asset = dynamic_cast<TrackAsset*>(next_track->asset);
 
     // TODO check all offsets into points buffer
-
     if (next_track) {
+        TrackAsset* next_track_asset = dynamic_cast<TrackAsset*>(next_track->asset);
+
         if (next_track->track_state != TrackState::CONFIG_A || next_track_asset->track_type == CROSSTRACK) {
             if (next_x == next_track_asset->points[2] + next_track->tile.x*16 &&
                 next_y == next_track_asset->points[3] + next_track->tile.y*16) {
@@ -298,7 +298,7 @@ bool TrainBogie::UpdatePoint(int32_t x, int32_t y) {
 }
 
 bool TrainBogie::ExitDepot() {
-    TrackAsset* track_asset = dynamic_cast<TrackAsset*>(track);
+    TrackAsset* track_asset = dynamic_cast<TrackAsset*>(track->asset);
     switch (track_asset->track_type) {
         case DEPOT_LEFT:
             x++;
@@ -455,7 +455,7 @@ bool TrainBogie::Unk2(Train* train) {
         }
     }
 
-    return false;
+    return true;
 }
 
 void TrainBogie::ReverseDirection(Train* train) {

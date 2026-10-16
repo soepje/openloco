@@ -94,7 +94,10 @@ void TrainCar::Update(Train* train) {
     }
 
     if (!moved) {
-        if (bogie_front->Move(train, this) || bogie_back->Move(train, this)) {
+        bool front_moved = bogie_front->Move(train, this);
+        bool back_moved = bogie_back->Move(train, this);
+
+        if (front_moved || back_moved) {
             WORLD.MarkDirty(view);
             UpdateRotation();
             SetFrame(rotation, true);
@@ -190,7 +193,7 @@ void TrainCar::UpdateRotation() {
     int32_t dx = x1 - x2;
     int32_t dy = y1 - y2;
 
-    double degrees = std::atan2((double) dy, (double) dx) * (180.0 / 3.14159265359);
+    double degrees = std::atan2((double) dy, (double) -dx) * (180.0 / 3.14159265359);
     int32_t frame = std::round(degrees * (128.0 / 360.0));
 
     rotation = (frame == 128) ? 0 : frame;

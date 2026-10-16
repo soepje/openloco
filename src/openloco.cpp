@@ -100,6 +100,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
     SDL_RenderClear(renderer);
 
+    TRAIN_MANAGER.Update();
+
     EVENT_MANAGER.UpdateTime();
 
     BUILDING_MANAGER.Update();

@@ -183,15 +183,16 @@ void World::DrawRect(const Rect& r) {
                 if (GAME_STATE == WORLD_VIEW) {
                     if (z == 0) {
                         if (t.bitmap_occupancy[z] != nullptr && t.bitmap_occupancy[z]->asset->type == TRACK) {
-                            TRAIN_MANAGER.Draw(r, z);
+                            TRAIN_MANAGER.Draw(r2, z);
                             MINIFIG_MANAGER.Draw(z, r2, false);
                         } else {
                             MINIFIG_MANAGER.Draw(z, r2, false);
-                            TRAIN_MANAGER.Draw(r, z);
+                            TRAIN_MANAGER.Draw(r2, z);
                         }
+                    } else if (z == 1) {
+                        TRAIN_MANAGER.Draw(r2, z);
+                        // TODO draw effects
                     }
-
-                    // TODO
                 }
                 if (entity != nullptr && entity->asset->frame_sets[entity->current_frameset].split_frames) {
                     entity->DrawSplitFrame(r2, false, 0);

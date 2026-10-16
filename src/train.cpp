@@ -322,7 +322,7 @@ void Train::SetVisible(bool visible) {
         for (size_t i = 0; i <= last_car; i++) {
             TrainCar* car = cars[i];
             if (car != nullptr) {
-                if (car->visible != visible) {
+                if (car->visible == visible) {
                     continue;
                 }
 
@@ -455,7 +455,7 @@ bool Train::AddCar(int32_t resource_id, TrainCarType type, bool tunnel) {
 }
 
 void Train::ExitDepot(Depot* depot, bool keep_orientation) {
-    track_tile = depot->tile;
+    depot_tile = depot->tile;
     if (depot->train && depot->train != this) {
         depot->QueueTrain(this);
         return;
@@ -550,8 +550,8 @@ bool Train::SetStartingTrack(Track* track, bool keep_orientation) {
     forward_bogie->track = track;
     forward_bogie->direction = cars[0]->bogie_front->direction;
     forward_bogie->point = cars[0]->bogie_front->point;
-    forward_bogie->x = track_asset->points[forward_bogie->point] + track->tile.x;
-    forward_bogie->y = track_asset->points[forward_bogie->point+1] + track->tile.y;
+    forward_bogie->x = track_asset->points[forward_bogie->point] + track->tile.x * 16;
+    forward_bogie->y = track_asset->points[forward_bogie->point+1] + track->tile.y * 16;
 
     if (track_type == 2) {
         forward_bogie->tunnel_state = 4;

@@ -58,13 +58,14 @@ Train* TrainManager::AddTrain(Depot* depot, SavegameTrain* savegame_train) {
                     snprintf(name, 10, "%s %lu", "TODO", train->field_7a);
                     train->cars[0]->SetName(name);
                     train->SetVisible(false);
-                    for (size_t j = 0; j < 4; j++) {
-                        if (savegame_train->resource_ids[j+1]) {
-                            TrainCarType train_car_type = TrainCar::GetTrainCarType(savegame_train->resource_ids[0]);
-                            train->AddCar(savegame_train->resource_ids[j+1], train_car_type, false);
-                            train->SetVisible(false);
-                        }
-                    }
+                    // TODO fix cars
+                    // for (size_t j = 0; j < 3; j++) {
+                    //     if (savegame_train->resource_ids[j+1]) {
+                    //         TrainCarType train_car_type = TrainCar::GetTrainCarType(savegame_train->resource_ids[j+1]);
+                    //         train->AddCar(savegame_train->resource_ids[j+1], train_car_type, false);
+                    //         train->SetVisible(false);
+                    //     }
+                    // }
                 }
             }
 
