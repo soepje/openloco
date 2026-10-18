@@ -53,7 +53,7 @@ Train::Train(uint32_t engine_resource_id, uint32_t unk1, bool tunnel, bool unk3)
             speed = train_asset->speed_slow;
             direction = 0;
 
-            SetState(TrainState::UNKNOWN_1);
+            SetState(TrainState::STOPPED);
 
             station_timer = 0;
 
@@ -103,16 +103,16 @@ void Train::Update() {
 
     if (station_timer != 0) {
         station_timer--;
-        if (station_timer == 1 && train_state == TrainState::STOPPED) {
+        if (station_timer == 1 && train_state == TrainState::WAITING) {
             SetState(TrainState::DRIVE);
         }
     }
 
     int local_c = 0;
 
-    if (!(train_state == TrainState::UNKNOWN_1 || train_state == TrainState::CRASHED ||
+    if (!(train_state == TrainState::STOPPED || train_state == TrainState::CRASHED ||
         tunnel_state == 2 || tunnel_state == 3 || depot_state == 2 || speed == 0 || station_timer > 0 ||
-        (train_state != TrainState::DRIVE && train_state != TrainState::STOPPED))) {
+        (train_state != TrainState::DRIVE && train_state != TrainState::WAITING))) {
 
         bool go = false;
         Track* track = forward_bogie->track;
@@ -132,8 +132,8 @@ void Train::Update() {
                 go = true;
                 break;
             case TrackState::SWITCH_STOP:
-                if (train_state != TrainState::STOPPED) {
-                    SetState(TrainState::STOPPED);
+                if (train_state != TrainState::WAITING) {
+                    SetState(TrainState::WAITING);
                 }
                 break;
             default:
@@ -149,7 +149,7 @@ void Train::Update() {
                 if (forward_bogie->tunnel_state == 2 || forward_bogie->depot_state == 2) {
                     local_c = 1;
                 } else {
-                    if (!forward_bogie->Unk2(this)) {
+                    if (!forward_bogie->MoveFront(this)) {
                         break;
                     }
                     local_c++;
@@ -185,7 +185,7 @@ void Train::Update() {
                 }
 
                 Track* forward_bogie_track = forward_bogie->track;
-                if (forward_bogie_track != nullptr && forward_bogie_track->track_type == TrackType::SWITCH && train_state != TrainState::UNKNOWN_1) {
+                if (forward_bogie_track != nullptr && forward_bogie_track->track_type == TrackType::SWITCH && train_state != TrainState::STOPPED) {
                     if (forward_bogie_track->track_state == TrackState::SWITCH_GO) {
                         SetState(TrainState::DRIVE);
                     } else if (forward_bogie_track->track_state == TrackState::SWITCH_REVERSE) {
@@ -198,8 +198,8 @@ void Train::Update() {
                             SetState(TrainState::DRIVE);
                         }
                     } else if (forward_bogie_track->track_state == TrackState::SWITCH_STOP) {
-                        if (train_state != TrainState::STOPPED) {
-                            SetState(TrainState::STOPPED);
+                        if (train_state != TrainState::WAITING) {
+                            SetState(TrainState::WAITING);
                         }
                     }
                 }
@@ -276,7 +276,7 @@ void Train::Update() {
 
     if (train_state == TrainState::CRASHED) {
         if (crash_timer == 0) {
-            SetState(TrainState::UNKNOWN_1);
+            SetState(TrainState::STOPPED);
             crash_timer = 0;
             SetSpeed(speed_slow);
             if (!reversing && CanReverse()) {
@@ -331,7 +331,7 @@ void Train::SetVisible(bool visible) {
                 WORLD.MarkDirty(car->view);
 
                 if (car->field_48 != nullptr) {
-                    if (visible && train_state != TrainState::UNKNOWN_1 && train_state != TrainState::STOPPED && train_state != TrainState::CRASHED) {
+                    if (visible && train_state != TrainState::STOPPED && train_state != TrainState::WAITING && train_state != TrainState::CRASHED) {
                         // TODO play sound
                     } else {
                         // TODO stop sound
@@ -353,10 +353,10 @@ void Train::SetState(TrainState state) {
 
     train_state = state;
 
-    if (state == TrainState::UNKNOWN_1) {
+    if (state == TrainState::STOPPED) {
         crash_timer = 0;
         station_timer = 0;
-    } else if (state != TrainState::STOPPED) {
+    } else if (state != TrainState::WAITING) {
 
     } else if (state != TrainState::CRASHED) {
         if (field_68 != 0) {
@@ -735,13 +735,13 @@ bool Train::ReverseDirection() {
         forward_bogie->Copy(cars[last_car]->bogie_back);
         forward_bogie->track->num_trains++;
         for (size_t i = 0; i < 12; i++) {
-            ok = forward_bogie->Unk2(this);
+            ok = forward_bogie->MoveFront(this);
         }
     } else {
         forward_bogie->Copy(cars[0]->bogie_front);
         forward_bogie->track->num_trains++;
         for (size_t i = 0; i < 12; i++) {
-            ok = forward_bogie->Unk2(this);
+            ok = forward_bogie->MoveFront(this);
             if(!ok) {
                 break;
             }
@@ -790,4 +790,49 @@ bool Train::ReverseDirection() {
     }
 
     return ok;
+}
+
+void Train::SetDirection(int32_t direction, bool no_check) {
+    if (this->direction != direction && !reversing) {
+        if (!no_check && !CanReverse()) {
+            return;
+        }
+
+        if (!reversing) {
+            reversing = true;
+            ReverseDirection();
+            reversing = false;
+        }
+    }
+}
+
+bool Train::UpdateSwitchState() {
+    if (train_state == TrainState::STOPPED) {
+        return false;
+    }
+
+    Track* switch_track = forward_bogie->track;
+    if (switch_track == nullptr) {
+        return false;
+    }
+
+    if (switch_track->track_state == TrackState::SWITCH_GO) {
+        SetState(TrainState::DRIVE);
+        return true;
+    } else if (switch_track->track_state == TrackState::SWITCH_REVERSE) {
+        if (!reversing) {
+            reversing = true;
+            ReverseDirection();
+            reversing = false;
+        }
+        SetState(TrainState::DRIVE);
+        return true;
+    } else if (switch_track->track_state == TrackState::SWITCH_STOP) {
+        if (train_state != TrainState::WAITING) {
+            SetState(TrainState::WAITING);
+        }
+        return false;
+    }
+
+    return true;
 }

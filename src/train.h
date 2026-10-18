@@ -13,8 +13,8 @@
 #include "walking_minifig.h"
 
 enum class TrainState {
-    UNKNOWN_1 = 0,
-    STOPPED = 1,
+    STOPPED = 0,
+    WAITING = 1,
     DRIVE = 2,
     UNKNOWN_2 = 3,
     CRASHED = 4,
@@ -67,14 +67,16 @@ public:
     int16_t SetSpeed(int16_t speed);
     void SetVisible(bool visible);
     void SetState(TrainState state);
+    void SetDirection(int32_t direction, bool no_check);
     Track* GetCrossing();
     void Update();
     bool HasPassengerCar();
     bool CanReverse();
-    bool IsOnBridge();
+    bool IsOnBridge(); // IsElevated();
     bool AddCar(int32_t resource_id, TrainCarType type, bool tunnel);
     void ExitDepot(Depot* depot, bool keep_orientation);
     bool SetStartingTrack(Track* track, bool unk);
+    bool UpdateSwitchState();
 };
 
 #endif //OPENLOCO_TRAIN_H

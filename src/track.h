@@ -4,6 +4,8 @@
 #include "asset.h"
 #include "building.h"
 
+class Train;
+
 enum class TrackType {
     REGULAR = 0,
     SWITCH = 1,
@@ -32,7 +34,7 @@ public:
     TrackType track_type; // 10c
     TrackState track_state; // 110
     int16_t num_trains = 0; // 114
-    int32_t field_118; // 118
+    Train* field_118; // 118
 };
 
 #endif //OPENLOCO_TRACK_H

@@ -94,7 +94,7 @@ bool TrainBogie::CheckStation(Train* train) {
         if (train->HasPassengerCar()) {
             if ((direction == 0 && point == 1) || (direction == 1 && point == (track_asset->num_points - 1))) {
                 train->station_timer = 200;
-                train->SetState(TrainState::STOPPED);
+                train->SetState(TrainState::WAITING);
                 return true;
             }
         }
@@ -136,7 +136,7 @@ bool TrainBogie::SetTrack(int32_t x, int32_t y) {
 
 bool TrainBogie::UpdateTrackConfig(Train* train, Track* track) {
     if (track->num_trains > 0) {
-        train->SetState(TrainState::STOPPED);
+        train->SetState(TrainState::WAITING);
     }
 
     TrackAsset* track_asset = dynamic_cast<TrackAsset*>(track->asset);
@@ -339,7 +339,9 @@ void TrainBogie::Despawn() {
     }
 }
 
-bool TrainBogie::Unk2(Train* train) {
+bool TrainBogie::MoveFront(Train* train) {
+    Track* old_track = track;
+
     if (!track || !track->ok) {
         return false;
     }
@@ -417,43 +419,111 @@ bool TrainBogie::Unk2(Train* train) {
                 auto track2 = dynamic_cast<Tunnel*>(train->forward_bogie->track);
                 if (track2->field_11c == 1 && train->tunnel_state != 1) {
                     if(train->CanReverse()) {
-                        // TODO
-
+                        train->SetDirection(direction == 0, true);
                         return false;
                     }
 
-                    // TODO
-
+                    train->SetState(TrainState::WAITING);
+                    train->field_90 = 1;
+                    train->station_timer = 2;
                     return false;
                 }
 
-
-      //           pvVar2 = param_2->train_thingy->track;
-      //           if ((*(int *)((int)pvVar2 + 0x11c) == 1) && (*(int *)&param_2->field_0x60 != 1)) {
-      //             uVar7 = Train_FUN_0044d630((int)param_2);
-      //             if ((char)uVar7 != '\0') {
-      //               FUN_0044d5e0(param_2,(uint)(param_2->field_8 == 0),'\x01');
-      //               return false;
-      //             }
-      //             Train_Unk2(param_2,1);
-      //             param_2->field_0x90 = 1;
-      //             *(undefined2 *)&param_2->field_0x36 = 2;
-      //             return false;
-      //           }
-      //           *(undefined4 *)((int)pvVar2 + 0x11c) = 1;
-      //           this->tunnel_state = 1;
-      //           *(undefined4 *)&param_2->field_0x60 = 1;
-      //           *(undefined4 *)&param_2->field_0x2e =
-      //                *(undefined4 *)((int)param_2->train_thingy->track + 0x88);
-
+                track2->field_11c = 1;
+                tunnel_state = 1;
+                train->tunnel_state = 1;
+                train->track_tile = train->forward_bogie->track->tile;
             } else if (track_asset->IsDepot()) {
+                if (depot_state != 0) {
+                    if(train->CanReverse()) {
+                        train->SetDirection(direction == 0, true);
+                        return false;
+                    }
 
+                    train->SetState(TrainState::WAITING);
+                    train->field_90 = 1;
+                    train->station_timer = 2;
+                    return false;
+                }
+
+                if (false /* TODO */) {
+                    depot_state = 1;
+                }
             }
 
+            if (old_track->field_118 == train) {
+                old_track->field_118 = nullptr;
+            }
         } else {
-            // TODO
+            if (next_track->track_type == TrackType::BUFFER) {
+                train->SetState(TrainState::STOPPED);
+                return false;
+            } else if (next_track->track_type == TrackType::POINTS) {
+                if (!UpdateTrackConfig(train, next_track)) {
+                    return false;
+                }
+            } else if (next_track->track_type == TrackType::CROSSING) {
+
+
+
+                // bVar5 = false;
+                // iVar7 = MovingEntityManager_FUN_00435020(&MINIFIG_MANAGER);
+                // if (iVar7 == 0) {
+                //   (**(code **)((int)(piVar7->Building).ImageEntity.Entity.vmt + 0x1c))(0);
+                //   iVar7 = TrainBogie_UpdateTrack((int)this);
+                //   if (iVar7 == 0) {
+                //     Train_SetState(train,2);
+                //     bVar5 = true;
+                //   }
+                //   else {
+                //     Train_SetState(train,1);
+                //   }
+                // }
+                // else {
+                //   Train_SetState(train,1);
+                //   this->track = pTVar1;
+                // }
+                // if (!bVar5) {
+                //   return false;
+                // }
+
+
+            } else if (next_track->track_type == TrackType::TUNNEL) {
+                if (train->CanReverse()) {
+                    train->SetDirection(direction == 0, true);
+                    return false;
+                }
+
+                train->SetState(TrainState::WAITING);
+                train->field_90 = 1;
+                train->station_timer = 2;
+                return false;
+            } else {
+                train->SetState(TrainState::WAITING);
+                return false;
+            }
         }
     }
+
+    if (train->train_state == TrainState::WAITING) {
+        if (track == nullptr) {
+            train->SetState(TrainState::WAITING);
+            return false;
+        }
+
+        if (track->track_type == TrackType::SWITCH) {
+            train->UpdateSwitchState();
+            return false;
+        } else if (track->track_type == TrackType::POINTS) {
+
+        } else if (track->track_type == TrackType::CROSSING) {
+
+        } else {
+
+        }
+    }
+
+    // TODO
 
     return true;
 }
@@ -713,7 +783,7 @@ bool TrainBogie::Move(Train* train, TrainCar* train_segment) {
             }
 
             if (tunnel_state != 2 && tunnel_state != 3) {
-                train->SetState(TrainState::STOPPED);
+                train->SetState(TrainState::WAITING);
             } else {
                 switch (dynamic_cast<TrackAsset*>(track->asset)->track_type) {
                 case TUNNEL_LEFT:

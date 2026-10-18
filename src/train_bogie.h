@@ -32,7 +32,7 @@ public:
     bool ExitDepot();
     void Despawn();
     bool UpdateTrackConfig(Train* train, Track* track);
-    bool Unk2(Train* train);
+    bool MoveFront(Train* train);
     void ReverseDirection(Train* train);
     bool Move(Train* train, TrainCar* train_segment);
     void Copy(TrainBogie* other);
