@@ -282,8 +282,8 @@ bool TrainCar::MoveBridge(Train* train) {
 
 bool TrainCar::ShouldDraw(int16_t x, int16_t y, int16_t z) {
     return this->z == z &&
-        view.left <= x && x <= view.right &&
-        view.top <= y && y <= view.bottom;
+        view.left <= x + 16 && x <= view.right &&
+        view.top <= y + 16 && y <= view.bottom;
 }
 
 bool TrainCar::Draw(Rect r) {
