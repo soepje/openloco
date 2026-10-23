@@ -505,6 +505,10 @@ bool TrainBogie::MoveFront(Train* train) {
         }
     }
 
+    if (CheckStation(train)) {
+        return false;
+    }
+
     if (train->train_state == TrainState::WAITING) {
         if (track == nullptr) {
             train->SetState(TrainState::WAITING);
@@ -515,17 +519,177 @@ bool TrainBogie::MoveFront(Train* train) {
             train->UpdateSwitchState();
             return false;
         } else if (track->track_type == TrackType::POINTS) {
+            if (track->num_trains > 1) {
+                return false;
+            }
 
+            TrackAsset* track_asset = dynamic_cast<TrackAsset*>(track->asset);
+
+            if ((direction == 1 && point == 1) ||
+                (direction == 0 && point == track_asset->num_points - 1) ||
+                (direction == 1 && point == track_asset->num_points + 2) ||
+                (direction == 0 && point == track_asset->num_points_alt - 1)) {
+                train->SetState(TrainState::DRIVE);
+                return false;
+            }
+
+            if (track->track_state == TrackState::CONFIG_A) {
+                track->track_state = TrackState::CONFIG_B;
+            } else if (track->track_state == TrackState::CONFIG_B) {
+                track->track_state = TrackState::CONFIG_A;
+            }
+
+            return false;
         } else if (track->track_type == TrackType::CROSSING) {
+            // TODO
+        } else if (track->track_type == TrackType::TUNNEL) {
+            if (train->CanReverse()) {
+                train->SetDirection(train->direction == 0, true);
+                return false;
+            }
 
+            train->SetState(TrainState::WAITING);
+            train->field_90 = true;
+            train->station_timer = 2;
+            return false;
         } else {
+            train->SetState(TrainState::WAITING);
+            return false;
+        }
 
+        return false; // ???
+    }
+
+    if (track == nullptr) {
+        return false;
+    }
+
+    bool moved = false;
+
+    if (tunnel_state == 0 && depot_state == 0) {
+        if (direction == 1) {
+            point++;
+        } else {
+            point--;
+        }
+
+        moved = true;
+
+        x = track_asset->points[point*2] + track->tile.x*16;
+        y = track_asset->points[point*2+1] + track->tile.y*16;
+    } else if (tunnel_state == 1 || depot_state == 1) {
+        switch (track_asset->track_type) {
+        case TrackAssetType::TUNNEL_LEFT:
+        case TrackAssetType::DEPOT_LEFT:
+            x--;
+            break;
+        case TrackAssetType::TUNNEL_RIGHT:
+        case TrackAssetType::DEPOT_RIGHT:
+            x++;
+            break;
+        case TrackAssetType::TUNNEL_TOP:
+        case TrackAssetType::DEPOT_TOP:
+            y--;
+            break;
+        case TrackAssetType::TUNNEL_BOTTOM:
+        case TrackAssetType::DEPOT_BOTTOM:
+            y++;
+            break;
+        default:
+            break;
+        }
+
+        moved = true;
+
+        if (tunnel_state == 1) {
+            switch (track_asset->track_type) {
+            case TrackAssetType::TUNNEL_LEFT:
+                if (x <= 0) {
+                    tunnel_state = 2;
+                }
+                break;
+            case TrackAssetType::TUNNEL_RIGHT:
+                if (x > WORLD.screen_width) {
+                    tunnel_state = 2;
+                }
+                break;
+            case TrackAssetType::TUNNEL_TOP:
+                if (y <= 0) {
+                    tunnel_state = 2;
+                }
+                break;
+            case TrackAssetType::TUNNEL_BOTTOM:
+                if (y >= WORLD.screen_height) {
+                    tunnel_state = 2;
+                }
+                break;
+            default:
+                break;
+            }
+        }
+    } else if (tunnel_state == 4) {
+        switch (track_asset->track_type) {
+        case TrackAssetType::TUNNEL_LEFT:
+            x++;
+            break;
+        case TrackAssetType::TUNNEL_RIGHT:
+            x--;
+            break;
+        case TrackAssetType::TUNNEL_TOP:
+            y++;
+            break;
+        case TrackAssetType::TUNNEL_BOTTOM:
+            y--;
+            break;
+        default:
+            break;
+        }
+
+        switch (track_asset->track_type) {
+        case TrackAssetType::TUNNEL_LEFT:
+            if (x >= 0) {
+                tunnel_state = 0;
+            }
+            break;
+        case TrackAssetType::TUNNEL_RIGHT:
+            if (x < WORLD.screen_width) {
+                tunnel_state = 0;
+            }
+            break;
+        case TrackAssetType::TUNNEL_TOP:
+            if (y >= 0) {
+                tunnel_state = 0;
+            }
+            break;
+        case TrackAssetType::TUNNEL_BOTTOM:
+            if (y <= WORLD.screen_height) {
+                tunnel_state = 0;
+            }
+            break;
+        default:
+            break;
+        }
+
+        moved = true;
+    } else if (depot_state == 4 || depot_state == 5) {
+        if (ExitDepot()) {
+            track->SetSomething(0);
+        }
+
+        moved = true;
+    }
+
+    if (track->track_type == TrackType::DEPOT) {
+        if (train->depot_state == 4 || train->depot_state == 5) {
+            if (track->num_trains != 0) {
+                track->SetSomething(0);
+                track->num_trains = 0;
+                // TODO return
+            }
         }
     }
 
-    // TODO
-
-    return true;
+    return moved;
 }
 
 void TrainBogie::ReverseDirection(Train* train) {
