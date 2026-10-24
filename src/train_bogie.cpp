@@ -463,31 +463,25 @@ bool TrainBogie::MoveFront(Train* train) {
                     return false;
                 }
             } else if (next_track->track_type == TrackType::CROSSING) {
+                int32_t num_minifigs = 0; // TODO
+                bool move = false;
 
+                if (num_minifigs == 0) {
+                    next_track->SetSomething(0);
+                    if (UpdateTrack() == nullptr) {
+                        train->SetState(TrainState::DRIVE);
+                        move = true;
+                    } else {
+                        train->SetState(TrainState::WAITING);
+                    }
+                } else {
+                    train->SetState(TrainState::WAITING);
+                    track = next_track; // ???
+                }
 
-
-                // bVar5 = false;
-                // iVar7 = MovingEntityManager_FUN_00435020(&MINIFIG_MANAGER);
-                // if (iVar7 == 0) {
-                //   (**(code **)((int)(piVar7->Building).ImageEntity.Entity.vmt + 0x1c))(0);
-                //   iVar7 = TrainBogie_UpdateTrack((int)this);
-                //   if (iVar7 == 0) {
-                //     Train_SetState(train,2);
-                //     bVar5 = true;
-                //   }
-                //   else {
-                //     Train_SetState(train,1);
-                //   }
-                // }
-                // else {
-                //   Train_SetState(train,1);
-                //   this->track = pTVar1;
-                // }
-                // if (!bVar5) {
-                //   return false;
-                // }
-
-
+                if (!move) {
+                    return false;
+                }
             } else if (next_track->track_type == TrackType::TUNNEL) {
                 if (train->CanReverse()) {
                     train->SetDirection(direction == 0, true);

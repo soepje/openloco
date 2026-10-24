@@ -1,5 +1,7 @@
 #include "track.h"
 #include "asset.h"
+#include "building.h"
+#include "entity.h"
 
 
 Track::Track(uint32_t resource_id) : Building(resource_id) {
@@ -37,4 +39,20 @@ Track::Track(uint32_t resource_id) : Building(resource_id) {
 
     field_118 = 0;
     num_trains = 0;
+}
+
+void Track::SetSomething(int32_t frame_set_index) {
+    TrackAsset* track_asset = dynamic_cast<TrackAsset*>(asset);
+    if (track_asset->track_type == TrackAssetType::POINTS || track_type == TrackType::CROSSING) {
+        if (frame_set_index == 0) {
+            track_state = TrackState::CONFIG_B;
+            Building::SetSomething(0);
+            return;
+        } else if (frame_set_index == 1) {
+            track_state = TrackState::CONFIG_A;
+            Building::SetSomething(1);
+            return;
+        }
+    }
+    Building::SetSomething(frame_set_index);
 }

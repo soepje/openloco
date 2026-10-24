@@ -35,6 +35,10 @@ public:
     TrackState track_state; // 110
     int16_t num_trains = 0; // 114
     Train* field_118; // 118
+
+    // TODO implement missing virtual methods
+
+    void SetSomething(int32_t frame_set_index) override;
 };
 
 #endif //OPENLOCO_TRACK_H
