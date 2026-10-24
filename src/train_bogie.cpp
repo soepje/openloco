@@ -231,14 +231,14 @@ Track* TrainBogie::UpdateTrack() {
             track->num_trains--;
             track = next_track;
             direction = 1;
-            point = next_track_asset->num_points_alt + 2;
+            point = next_track_asset->num_points + 2;
             track->num_trains++;
             return nullptr;
         }
         if (next_track_asset->num_points_alt == 0 ||
             next_x != next_track_asset->points[next_track_asset->num_points_alt*2-2] + next_track->tile.x*16 ||
             next_y != next_track_asset->points[next_track_asset->num_points_alt*2-1] + next_track->tile.y*16) {
-            return nullptr;
+            return next_track;
         }
         if (next_track_asset->track_type == POINTS && next_track->track_state == TrackState::CONFIG_B) {
             if (next_track_asset->points[0] != next_track_asset->points[next_track_asset->num_points_alt * 2 + 2] ||

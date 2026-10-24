@@ -483,13 +483,11 @@ bool TrackAsset::IsStation() {
 }
 
 bool TrackAsset::IsNextTrack(int16_t point) {
-    if (point != 0) {
-        if (point != num_points && (num_points_alt != 0 || (point != num_points + 1 && point != num_points_alt))) {
-            return false;
-        }
+    if (point == 0 || point == num_points || (num_points_alt != 0 && (point == num_points + 1 || point == num_points_alt))) {
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 
