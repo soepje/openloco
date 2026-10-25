@@ -194,6 +194,9 @@ void TrainCar::UpdateRotation() {
     int32_t dy = y1 - y2;
 
     double degrees = std::atan2((double) dy, (double) -dx) * (180.0 / 3.14159265359);
+    if (degrees < 0) {
+        degrees += 360.0;
+    }
     int32_t frame = std::round(degrees * (128.0 / 360.0));
 
     rotation = (frame == 128) ? 0 : frame;
